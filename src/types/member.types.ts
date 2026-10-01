@@ -9,6 +9,9 @@ export interface Member {
   id: string;
   tenantId: string;
 
+  /** Set only when this congregant also has a portal login — see docs/database-design.md members.user_id. */
+  userId?: string;
+
   // Identity
   firstName: string;
   lastName: string;

@@ -7,18 +7,10 @@ import { useQuery } from '@tanstack/react-query';
 import { Heart, CalendarDays, Users, Info, ChevronRight } from 'lucide-react';
 import { useCurrentUser } from '@/hooks/useAuthStore';
 import { eventsService } from '@/services/eventsService';
+import { membersService } from '@/services/membersService';
+import { financeService } from '@/services/financeService';
 import { getGreeting, formatCurrency, formatDateTime } from '@/lib/formatters';
 import { Avatar, Button, Card, Skeleton, Text } from '@/components/ui';
-
-// No service links a portal session to a specific member/donation record yet
-// (members.mock.ts has no entry for the logged-in portal demo user) — the
-// events section above is real; this one is the missing dependency, not an
-// oversight. Swap for a real `financeService.getMyGivingSummary()` once that
-// link exists, same shape.
-const givingSummary = {
-  ytd: 3850,
-  lastDonation: { amount: 150, date: '2024-10-20', fund: 'General Fund' }
-};
 
 export function PortalHome() {
   const user = useCurrentUser();
@@ -29,6 +21,22 @@ export function PortalHome() {
     queryFn: () => eventsService.list({ upcoming: true }),
   });
   const events = upcoming.filter((e) => e.isPublic).slice(0, 3);
+
+  // The member record behind this login, if the account is linked to one —
+  // what "my giving" actually is, rather than placeholder numbers.
+  const { data: member, isLoading: isLoadingMember } = useQuery({
+    queryKey: ['members', 'me', user?.id],
+    queryFn: () => membersService.getByUserId(user!.id),
+    enabled: Boolean(user?.id),
+  });
+
+  const { data: donations = [], isLoading: isLoadingDonations } = useQuery({
+    queryKey: ['finance', 'donations', 'me', member?.id],
+    queryFn: () => financeService.listDonationsByMember(member!.id),
+    enabled: Boolean(member?.id),
+  });
+  const lastDonation = donations[0];
+  const isLoadingGiving = isLoadingMember || (Boolean(member) && isLoadingDonations);
 
   return (
     <div className="w-full animate-fade-in flex flex-col min-h-full pb-8">
@@ -105,27 +113,44 @@ export function PortalHome() {
         <section>
           <Text variant="h3" className="mb-3">My Giving</Text>
           <Card padding="md">
-            <div className="flex items-end justify-between mb-4">
-              <div>
-                <Text variant="body-sm" color="muted">Year to Date</Text>
-                <Text variant="display" color="primary">{formatCurrency(givingSummary.ytd)}</Text>
+            {isLoadingGiving ? (
+              <div className="space-y-3">
+                <Skeleton className="h-10 w-32" />
+                <Skeleton className="h-10 rounded-lg" />
               </div>
-              <Link to="/portal/giving">
-                <Button variant="primary" size="sm">Give Now</Button>
-              </Link>
-            </div>
-            
-            <hr className="border-slate-100 dark:border-slate-800 my-4" />
-            
-            <Link to="/portal/giving" className="flex items-center justify-between group">
-              <div>
-                <Text variant="body-sm" className="font-medium">Latest: {givingSummary.lastDonation.fund}</Text>
-                <Text variant="caption" color="muted">
-                  {formatCurrency(givingSummary.lastDonation.amount)} • {new Date(givingSummary.lastDonation.date).toLocaleDateString()}
-                </Text>
-              </div>
-              <ChevronRight size={16} className="text-slate-400 group-hover:text-primary transition-colors" />
-            </Link>
+            ) : (
+              <>
+                <div className="flex items-end justify-between mb-4">
+                  <div>
+                    <Text variant="body-sm" color="muted">Year to Date</Text>
+                    <Text variant="display" color="primary">
+                      {formatCurrency(member?.givingThisYear ?? 0)}
+                    </Text>
+                  </div>
+                  <Link to="/portal/giving">
+                    <Button variant="primary" size="sm">Give Now</Button>
+                  </Link>
+                </div>
+
+                <hr className="border-slate-100 dark:border-slate-800 my-4" />
+
+                {lastDonation ? (
+                  <Link to="/portal/giving" className="flex items-center justify-between group">
+                    <div>
+                      <Text variant="body-sm" className="font-medium">Latest: {lastDonation.fundName}</Text>
+                      <Text variant="caption" color="muted">
+                        {formatCurrency(lastDonation.amount)} • {new Date(lastDonation.createdAt).toLocaleDateString()}
+                      </Text>
+                    </div>
+                    <ChevronRight size={16} className="text-slate-400 group-hover:text-primary transition-colors" />
+                  </Link>
+                ) : (
+                  <Text variant="body-sm" color="muted">
+                    Nothing recorded yet — your first gift will show up here.
+                  </Text>
+                )}
+              </>
+            )}
           </Card>
         </section>
 

@@ -42,6 +42,10 @@ const rawMembers: Array<Omit<MemberListItem, 'initials'> & {
   // Aaron Smith's household (hh-1, see MOCK_HOUSEHOLDS) — the only household fully on file today.
   { id: 'm16', firstName: 'Emma', lastName: 'Smith', status: 'active', unitName: "Women's Ministry", envelopeNumber: '0043', lastSeenAt: '2024-10-20' },
   { id: 'm17', firstName: 'Lucas', lastName: 'Smith', status: 'active', unitName: 'Sunday School', lastSeenAt: '2024-10-20' },
+  // Julian Brooks (m18) is the one member with a portal login — see
+  // MOCK_PORTAL_MEMBER_DETAIL below, which is what links the "member" dev
+  // session to a real giving history instead of placeholder numbers.
+  { id: 'm18', firstName: 'Julian', lastName: 'Brooks', status: 'active', unitName: 'Young Adults', envelopeNumber: '0210', lastSeenAt: '2024-10-27' },
 ];
 
 export const MOCK_MEMBERS: MemberListItem[] = rawMembers.map(({ firstName, lastName, ...m }) => ({
@@ -88,14 +92,53 @@ export const MOCK_MEMBER_DETAIL: MemberDetail = {
 };
 
 /**
- * Builds a MemberDetail for any roster id. Only Aaron Smith (m1) has a fully
- * fleshed-out profile today — everyone else gets their real identity/contact/
- * status fields plus empty extended fields, rather than fabricated biographical
- * data. Mirrors what a real system looks like mid-migration: some profiles are
- * complete, most are not yet.
+ * The one member with a portal login (userId set) — what MyProfile/MyGiving/
+ * PortalHome resolve "my own record" against via getMemberDetailByUserId,
+ * instead of showing placeholder numbers with no member behind them.
+ */
+export const MOCK_PORTAL_MEMBER_DETAIL: MemberDetail = {
+  id: 'm18',
+  tenantId: 'tenant-1',
+  userId: 'u-member',
+  firstName: 'Julian',
+  lastName: 'Brooks',
+  photoUrl: avatarUrls[1],
+  initials: 'JB',
+  email: 'julian@stjudes.org',
+  phone: '+1 555 0198',
+  status: 'active' as MemberStatus,
+  envelopeNumber: '0210',
+  unitId: 'unit-youth',
+  unitName: 'Young Adults',
+  joinedAt: '2023-01-15',
+  lastSeenAt: '2024-10-27',
+  address: {
+    line1: '123 Grace Way, Suite 4',
+    city: 'Austin',
+    state: 'TX',
+    country: 'US',
+    postalCode: '78701',
+  },
+  attendanceRate: 0.74,
+  totalGiving: 850,
+  givingThisYear: 375,
+  createdAt: '2023-01-15T00:00:00Z',
+  updatedAt: '2024-10-20T09:15:00Z',
+};
+
+const FULLY_DETAILED: MemberDetail[] = [MOCK_MEMBER_DETAIL, MOCK_PORTAL_MEMBER_DETAIL];
+
+/**
+ * Builds a MemberDetail for any roster id. Only Aaron Smith (m1) and Julian
+ * Brooks (m18, the portal demo login) have fully fleshed-out profiles today —
+ * everyone else gets their real identity/contact/status fields plus empty
+ * extended fields, rather than fabricated biographical data. Mirrors what a
+ * real system looks like mid-migration: some profiles are complete, most are
+ * not yet.
  */
 export function getMemberDetail(id: string): MemberDetail {
-  if (id === MOCK_MEMBER_DETAIL.id) return MOCK_MEMBER_DETAIL;
+  const detailed = FULLY_DETAILED.find((m) => m.id === id);
+  if (detailed) return detailed;
   const roster = MOCK_MEMBERS.find((m) => m.id === id);
   if (!roster) return MOCK_MEMBER_DETAIL;
   return {
@@ -104,6 +147,11 @@ export function getMemberDetail(id: string): MemberDetail {
     createdAt: MOCK_MEMBER_DETAIL.createdAt,
     updatedAt: MOCK_MEMBER_DETAIL.updatedAt,
   };
+}
+
+/** Resolves the member record linked to a portal login, or undefined if that account isn't tied to one yet. */
+export function getMemberDetailByUserId(userId: string): MemberDetail | undefined {
+  return FULLY_DETAILED.find((m) => m.userId === userId);
 }
 
 export const MOCK_HOUSEHOLDS: Household[] = [

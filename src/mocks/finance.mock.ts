@@ -63,6 +63,11 @@ export const MOCK_DONATIONS: Donation[] = [
   { id: 'd1', batchId: 'batch-1', tenantId: 't1', memberId: 'm1', memberName: 'Aaron Smith', envelopeNumber: '0042', isGuest: false, fundId: 'fund-1', fundName: 'General Fund', amount: 150.00, paymentMethod: 'cash', isVoided: false, createdAt: '2024-10-20T09:15:00Z', createdById: 'u1' },
   { id: 'd2', batchId: 'batch-1', tenantId: 't1', memberId: 'm2', memberName: 'Abigail Johnson', envelopeNumber: '0117', isGuest: false, fundId: 'fund-1', fundName: 'General Fund', amount: 75.00, paymentMethod: 'check', isVoided: false, createdAt: '2024-10-20T09:20:00Z', createdById: 'u1' },
   { id: 'd3', batchId: 'batch-1', tenantId: 't1', memberId: 'm3', memberName: 'Benjamin Carter', envelopeNumber: '0003', isGuest: false, fundId: 'fund-2', fundName: 'Building Fund', amount: 500.00, paymentMethod: 'check', isVoided: false, createdAt: '2024-10-20T09:25:00Z', createdById: 'u1' },
+  // Julian Brooks (m18) — the portal demo login's own giving history. Sums to
+  // MOCK_PORTAL_MEMBER_DETAIL.givingThisYear ($375) so the two stay consistent.
+  { id: 'd4', batchId: 'batch-1', tenantId: 't1', memberId: 'm18', memberName: 'Julian Brooks', envelopeNumber: '0210', isGuest: false, fundId: 'fund-1', fundName: 'General Fund', amount: 150.00, paymentMethod: 'card', isVoided: false, createdAt: '2024-10-20T09:30:00Z', createdById: 'u1' },
+  { id: 'd5', batchId: 'batch-2', tenantId: 't1', memberId: 'm18', memberName: 'Julian Brooks', envelopeNumber: '0210', isGuest: false, fundId: 'fund-1', fundName: 'General Fund', amount: 125.00, paymentMethod: 'card', isVoided: false, createdAt: '2024-09-22T09:30:00Z', createdById: 'u1' },
+  { id: 'd6', batchId: 'batch-3', tenantId: 't1', memberId: 'm18', memberName: 'Julian Brooks', envelopeNumber: '0210', isGuest: false, fundId: 'fund-3', fundName: 'Missions', amount: 100.00, paymentMethod: 'card', isVoided: false, createdAt: '2024-08-15T09:30:00Z', createdById: 'u1' },
 ];
 
 export const MOCK_PLEDGES: Pledge[] = [

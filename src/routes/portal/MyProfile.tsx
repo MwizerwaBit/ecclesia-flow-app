@@ -3,14 +3,33 @@
  * @description Member profile view allowing users to update their details and preferences.
  */
 import { useRef, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { User, Mail, Phone, MapPin, Settings, LogOut, Camera, Loader2 } from 'lucide-react';
 import { useAuthStore, useCurrentUser } from '@/hooks/useAuthStore';
 import { useMediaUpload } from '@/components/media/useMediaUpload';
+import { membersService } from '@/services/membersService';
 import { Button, Input, Card, Text, Avatar } from '@/components/ui';
+
+function formatAddress(address: { line1: string; line2?: string; city: string; state?: string; postalCode?: string } | undefined) {
+  if (!address) return 'Not on file';
+  const line2 = [address.city, address.state, address.postalCode].filter(Boolean).join(', ');
+  return [address.line1, address.line2, line2].filter(Boolean).join('\n');
+}
 
 export function MyProfile() {
   const user = useCurrentUser();
   const { logout } = useAuthStore();
+  const queryClient = useQueryClient();
+
+  // The member record behind this login — phone/address live there, not on
+  // the session itself, once the account is linked to one. Read directly
+  // from the query rather than copied into local state, so there's nothing
+  // to keep in sync.
+  const { data: member } = useQuery({
+    queryKey: ['members', 'me', user?.id],
+    queryFn: () => membersService.getByUserId(user!.id),
+    enabled: Boolean(user?.id),
+  });
 
   const [photoUrl, setPhotoUrl] = useState(user?.photoUrl);
   const avatarInputRef = useRef<HTMLInputElement>(null);
@@ -20,14 +39,38 @@ export function MyProfile() {
     firstName: user?.firstName || '',
     lastName: user?.lastName || '',
     email: user?.email || '',
-    phone: '(555) 123-4567',
-    address: '123 Grace Way, Suite 4\nAustin, TX 78701'
+    phone: '',
   });
+
+  const save = useMutation({
+    mutationFn: () => {
+      if (!member) throw new Error('No member record linked to this account yet');
+      return membersService.update(member.id, { phone: formData.phone.trim() || undefined });
+    },
+    // Written straight into the cache from the mutation's own response rather
+    // than invalidated-and-refetched: update() doesn't persist in the mock
+    // layer (same as everywhere else this app calls it), so a refetch here
+    // would quietly revert the save back to the old phone number.
+    onSuccess: (updated) => {
+      queryClient.setQueryData(['members', 'me', user?.id], updated);
+      setIsEditing(false);
+    },
+  });
+
+  const startEditing = () => {
+    // Seeded here, right as editing begins, rather than synced in an effect —
+    // there's no moment before this where a stale value could be shown.
+    setFormData((prev) => ({ ...prev, phone: member?.phone ?? '' }));
+    setIsEditing(true);
+  };
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsEditing(false);
-    // Real app would dispatch to an API
+    if (member) {
+      save.mutate();
+    } else {
+      setIsEditing(false);
+    }
   };
 
   return (
@@ -69,8 +112,8 @@ export function MyProfile() {
           <div className="flex items-center justify-between mb-3">
             <Text variant="h3">Personal Details</Text>
             {!isEditing && (
-              <button 
-                onClick={() => setIsEditing(true)}
+              <button
+                onClick={startEditing}
                 className="text-body-sm text-primary font-bold hover:underline"
               >
                 Edit
@@ -107,8 +150,8 @@ export function MyProfile() {
                 />
                 
                 <div className="pt-2 flex justify-end gap-2">
-                  <Button variant="secondary" type="button" onClick={() => setIsEditing(false)}>Cancel</Button>
-                  <Button variant="primary" type="submit">Save Changes</Button>
+                  <Button variant="secondary" type="button" onClick={() => setIsEditing(false)} disabled={save.isPending}>Cancel</Button>
+                  <Button variant="primary" type="submit" isLoading={save.isPending}>Save Changes</Button>
                 </div>
               </form>
             ) : (
@@ -133,7 +176,7 @@ export function MyProfile() {
                   <Phone size={18} className="text-slate-400 mt-0.5" />
                   <div>
                     <Text variant="caption" color="muted">Phone Number</Text>
-                    <Text variant="body" className="font-medium">{formData.phone}</Text>
+                    <Text variant="body" className="font-medium">{member?.phone || 'Not on file'}</Text>
                   </div>
                 </div>
                 <hr className="border-slate-100 dark:border-slate-800" />
@@ -141,7 +184,7 @@ export function MyProfile() {
                   <MapPin size={18} className="text-slate-400 mt-0.5" />
                   <div>
                     <Text variant="caption" color="muted">Address</Text>
-                    <Text variant="body" className="font-medium whitespace-pre-line">{formData.address}</Text>
+                    <Text variant="body" className="font-medium whitespace-pre-line">{formatAddress(member?.address)}</Text>
                   </div>
                 </div>
               </div>

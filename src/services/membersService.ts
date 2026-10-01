@@ -4,7 +4,7 @@
  */
 import type { Household, MemberListItem, MemberDetail, PastoralNote, SacramentalRecord, VisitorFollowUp, VisitorQuickAdd } from '@/types';
 import { mockResponse, API_MODE, apiRequest } from './adapter';
-import { MOCK_MEMBERS, MOCK_HOUSEHOLDS, MOCK_NOT_SEEN_RECENTLY, MOCK_VISITOR_FOLLOWUPS, getMemberDetail } from '@/mocks/members.mock';
+import { MOCK_MEMBERS, MOCK_HOUSEHOLDS, MOCK_NOT_SEEN_RECENTLY, MOCK_VISITOR_FOLLOWUPS, getMemberDetail, getMemberDetailByUserId } from '@/mocks/members.mock';
 
 export const membersService = {
   async list(params?: { search?: string; status?: string; unitId?: string }): Promise<MemberListItem[]> {
@@ -29,6 +29,12 @@ export const membersService = {
   async getById(id: string): Promise<MemberDetail> {
     if (API_MODE === 'mock') return mockResponse(getMemberDetail(id));
     return apiRequest<MemberDetail>(`/members/${id}`);
+  },
+
+  /** The member record behind a portal login, if that account is linked to one yet. */
+  async getByUserId(userId: string): Promise<MemberDetail | null> {
+    if (API_MODE === 'mock') return mockResponse(getMemberDetailByUserId(userId) ?? null);
+    return apiRequest<MemberDetail | null>(`/members?userId=${userId}`);
   },
 
   async create(data: Partial<MemberDetail>): Promise<MemberDetail> {

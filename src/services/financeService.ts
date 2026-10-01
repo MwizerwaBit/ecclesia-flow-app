@@ -100,6 +100,18 @@ export const financeService = {
     return apiRequest<Donation[]>(`/finance/batches/${batchId}/donations`);
   },
 
+  /** A member's own giving history across every batch — "my giving," not one batch's. */
+  async listDonationsByMember(memberId: string): Promise<Donation[]> {
+    if (API_MODE === 'mock') {
+      return mockResponse(
+        MOCK_DONATIONS.filter((d) => d.memberId === memberId && !d.isVoided).sort(
+          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        ),
+      );
+    }
+    return apiRequest<Donation[]>(`/finance/donations?memberId=${memberId}`);
+  },
+
   async createDonation(batchId: string, form: DonationEntryForm): Promise<Donation> {
     if (API_MODE === 'mock') {
       const fund = MOCK_FUNDS.find((f) => f.id === form.fundId) ?? MOCK_FUNDS[0];

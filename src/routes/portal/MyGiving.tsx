@@ -3,24 +3,42 @@
  * @description Member giving interface. Allows members to donate and view their history.
  */
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Check, CreditCard, History } from 'lucide-react';
-import { Button, Card, Text, Input, Select } from '@/components/ui';
+import { useCurrentUser } from '@/hooks/useAuthStore';
+import { membersService } from '@/services/membersService';
+import { financeService } from '@/services/financeService';
+import { Button, Card, EmptyState, Skeleton, Text, Input, Select } from '@/components/ui';
 import { formatCurrency } from '@/lib/formatters';
 
 const PRESET_AMOUNTS = [50, 100, 250, 500];
 
-const FUNDS = [
-  { value: 'general', label: 'General Tithes & Offerings' },
-  { value: 'missions', label: 'Global Missions' },
-  { value: 'building', label: 'Building Fund' },
-  { value: 'youth', label: 'Youth Ministry' }
-];
-
 export function MyGiving() {
+  const user = useCurrentUser();
   const [amount, setAmount] = useState<string>('');
-  const [fund, setFund] = useState<string>('general');
+  const [fundId, setFundId] = useState<string>('');
   const [frequency, setFrequency] = useState<'one-time' | 'monthly'>('one-time');
   const [justGaveAmount, setJustGaveAmount] = useState<number | null>(null);
+  const [showAllHistory, setShowAllHistory] = useState(false);
+
+  const { data: funds = [] } = useQuery({
+    queryKey: ['finance', 'funds'],
+    queryFn: () => financeService.listFunds(),
+  });
+  const activeFundId = fundId || funds.find((f) => f.isDefault)?.id || funds[0]?.id || '';
+
+  const { data: member } = useQuery({
+    queryKey: ['members', 'me', user?.id],
+    queryFn: () => membersService.getByUserId(user!.id),
+    enabled: Boolean(user?.id),
+  });
+
+  const { data: donations = [], isLoading: isLoadingDonations } = useQuery({
+    queryKey: ['finance', 'donations', 'me', member?.id],
+    queryFn: () => financeService.listDonationsByMember(member!.id),
+    enabled: Boolean(member?.id),
+  });
+  const visibleDonations = showAllHistory ? donations : donations.slice(0, 3);
 
   const handlePresetClick = (preset: number) => {
     setAmount(preset.toString());
@@ -54,7 +72,7 @@ export function MyGiving() {
           <div className="flex items-center gap-2 rounded-lg bg-success-light px-4 py-3 animate-fade-in">
             <Check size={16} className="text-success shrink-0" aria-hidden />
             <Text variant="body-sm" className="text-success">
-              {formatCurrency(justGaveAmount)} to {FUNDS.find((f) => f.value === fund)?.label} — a payment
+              {formatCurrency(justGaveAmount)} to {funds.find((f) => f.id === activeFundId)?.name} — a payment
               method isn&rsquo;t connected yet, so this hasn&rsquo;t actually been charged.
             </Text>
           </div>
@@ -99,9 +117,9 @@ export function MyGiving() {
             <div>
               <Select
                 label="Designated Fund"
-                value={fund}
-                onChange={(e) => setFund(e.target.value)}
-                options={FUNDS}
+                value={activeFundId}
+                onChange={(e) => setFundId(e.target.value)}
+                options={funds.map((f) => ({ value: f.id, label: f.name }))}
               />
             </div>
 
@@ -155,30 +173,46 @@ export function MyGiving() {
               <History size={20} className="text-slate-400" />
               Recent Giving
             </Text>
-            <button className="text-body-sm text-primary font-bold hover:underline">
-              View All
-            </button>
+            {donations.length > 3 && (
+              <button
+                type="button"
+                onClick={() => setShowAllHistory((v) => !v)}
+                className="text-body-sm text-primary font-bold hover:underline"
+              >
+                {showAllHistory ? 'Show less' : 'View All'}
+              </button>
+            )}
           </div>
-          
-          <div className="space-y-3">
-            {[
-              { id: 1, date: '2024-10-20', amount: 150, fund: 'General Tithes' },
-              { id: 2, date: '2024-09-22', amount: 150, fund: 'General Tithes' },
-              { id: 3, date: '2024-08-15', amount: 50, fund: 'Missions' },
-            ].map((donation) => (
-              <Card key={donation.id} className="flex justify-between items-center p-4">
-                <div>
-                  <Text variant="body-sm" className="font-bold">{donation.fund}</Text>
-                  <Text variant="caption" color="muted">
-                    {new Date(donation.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+
+          {isLoadingDonations ? (
+            <div className="space-y-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-16 rounded-xl" />
+              ))}
+            </div>
+          ) : donations.length === 0 ? (
+            <EmptyState
+              icon={History}
+              title="Nothing recorded yet"
+              description="Your giving history will appear here once a gift is recorded."
+            />
+          ) : (
+            <div className="space-y-3">
+              {visibleDonations.map((donation) => (
+                <Card key={donation.id} className="flex justify-between items-center p-4">
+                  <div>
+                    <Text variant="body-sm" className="font-bold">{donation.fundName}</Text>
+                    <Text variant="caption" color="muted">
+                      {new Date(donation.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </Text>
+                  </div>
+                  <Text variant="body" color="primary" className="font-bold">
+                    {formatCurrency(donation.amount)}
                   </Text>
-                </div>
-                <Text variant="body" color="primary" className="font-bold">
-                  {formatCurrency(donation.amount)}
-                </Text>
-              </Card>
-            ))}
-          </div>
+                </Card>
+              ))}
+            </div>
+          )}
         </section>
 
       </div>
