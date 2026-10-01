@@ -9,7 +9,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, Navigate } from 'react-router-dom';
-import { Clock, Plus, ShieldAlert, ShieldCheck, UserPlus } from 'lucide-react';
+import { Clock, Crown, Plus, ShieldAlert, ShieldCheck, UserPlus } from 'lucide-react';
 import type { TeamMember } from '@/types';
 import { teamService } from '@/services/teamService';
 import { useRole } from '@/hooks/useRole';
@@ -31,6 +31,11 @@ export function TeamAndRoles() {
   const { can } = useRole();
   const [tab, setTab] = useState<Tab>('people');
   const [editing, setEditing] = useState<TeamMember | null>(null);
+
+  const { data: leader } = useQuery({
+    queryKey: ['team', 'leader'],
+    queryFn: () => teamService.getLeader(),
+  });
 
   const { data: team = [], isLoading } = useQuery({
     queryKey: ['team'],
@@ -58,6 +63,30 @@ export function TeamAndRoles() {
           The people who can sign in and administer your church.
         </Text>
       </header>
+
+      {leader && (
+        <Card variant="outline" padding="md" className="mb-5 flex items-center gap-3">
+          <Avatar src={leader.photoUrl} name={`${leader.firstName} ${leader.lastName}`} size="sm" className="shrink-0" />
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5">
+              <Crown size={14} className="text-amber-500 shrink-0" aria-hidden />
+              <Text variant="label" color="muted">
+                Church leader
+              </Text>
+            </div>
+            <Text variant="body" className="font-medium truncate">
+              {leader.firstName} {leader.lastName}
+            </Text>
+          </div>
+          {can('org:settings') && (
+            <Link to="/staff/team/leadership">
+              <Button variant="secondary" size="sm">
+                Manage
+              </Button>
+            </Link>
+          )}
+        </Card>
+      )}
 
       <SegmentedControl
         label="Team view"
@@ -115,8 +144,9 @@ export function TeamAndRoles() {
                     />
 
                     <div className="min-w-0 flex-1">
-                      <p className="font-member-name text-h3 truncate text-slate-900 dark:text-slate-100">
+                      <p className="font-member-name text-h3 truncate text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
                         {member.firstName} {member.lastName}
+                        {member.isLeader && <Crown size={14} className="text-amber-500 shrink-0" aria-label="Church leader" />}
                       </p>
                       <Text variant="caption" color="muted" className="truncate block">
                         {member.email}

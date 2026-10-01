@@ -120,6 +120,41 @@ export interface TeamMember {
   lastActiveAt?: string;
   invitedAt: string;
   acceptedAt?: string;
+  /** The org's single accountable owner — distinct from role/permissions. At most one true per tenant. */
+  isLeader?: boolean;
+}
+
+export type LeadershipTransferStatus = 'pending_approvals' | 'completed' | 'canceled';
+
+export interface LeadershipTransferApproval {
+  teamMemberId: string;
+  name: string;
+  approvedAt: string;
+}
+
+/**
+ * A church-leader handoff. Requires MFA at the moment of initiation (a
+ * re-auth step, not just being logged in) and sign-off from staff members
+ * other than the outgoing leader and the nominee, so the change can't be
+ * made unilaterally by one account alone.
+ */
+export interface LeadershipTransferRequest {
+  id: string;
+  tenantId: string;
+  outgoingLeaderId: string;
+  outgoingLeaderName: string;
+  nomineeId: string;
+  nomineeName: string;
+  initiatedByTeamMemberId: string;
+  initiatedAt: string;
+  mfaVerifiedAt: string;
+  requiredApprovals: number;
+  /** Everyone eligible to approve this specific request — every active team member except the outgoing leader and the nominee. */
+  eligibleApproverIds: string[];
+  approvals: LeadershipTransferApproval[];
+  status: LeadershipTransferStatus;
+  completedAt?: string;
+  canceledAt?: string;
 }
 
 export interface CustomRole {

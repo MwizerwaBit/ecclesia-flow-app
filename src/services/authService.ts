@@ -92,6 +92,20 @@ export const authService = {
     return apiRequest('/auth/mfa/verify', { method: 'POST', body: JSON.stringify({ code }) });
   },
 
+  /**
+   * Step-up re-auth for a sensitive in-session action (leadership transfer,
+   * approving one) — distinct from verifyMfa, which replaces the session at
+   * login. Doesn't change who's signed in, just confirms it's really them
+   * right now.
+   */
+  async verifyStepUp(code: string): Promise<boolean> {
+    if (API_MODE === 'mock') return mockResponse(code.length === 6);
+    return apiRequest<{ verified: boolean }>('/auth/step-up/verify', {
+      method: 'POST',
+      body: JSON.stringify({ code }),
+    }).then((r) => r.verified);
+  },
+
   async requestPasswordReset(email: string): Promise<void> {
     if (API_MODE === 'mock') return mockResponse(undefined as void);
     return apiRequest('/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) });

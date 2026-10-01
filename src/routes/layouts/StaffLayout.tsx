@@ -108,6 +108,7 @@ const SECTION_TITLES: Array<[string, string]> = [
   ['/staff/finance', 'Giving'],
   ['/staff/certificates', 'Certificates'],
   ['/staff/comms', 'Announcements'],
+  ['/staff/team/leadership', 'Church leadership'],
   ['/staff/team', 'Team & roles'],
   ['/staff/settings', 'Settings'],
 ];

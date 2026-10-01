@@ -6,6 +6,7 @@ import type {
   Announcement,
   CustomRole,
   HierarchyUnit,
+  LeadershipTransferRequest,
   MessageTemplate,
   TeamMember,
 } from '@/types';
@@ -111,7 +112,7 @@ export const MOCK_TEMPLATES: MessageTemplate[] = [
 ];
 
 export const MOCK_TEAM: TeamMember[] = [
-  { id: 'tm1', tenantId: 't1', userId: 'u1', firstName: 'Sarah', lastName: 'Thompson', email: 'sarah.thompson@example.org', photoUrl: 'https://i.pravatar.cc/150?img=5', roleId: 'role-admin', roleName: 'Church Admin', roleColor: '#4338CA', unitScope: 'all', unitScopeName: 'All units', mfaEnabled: true, lastActiveAt: '2024-10-22T08:45:00Z', invitedAt: '2023-01-10T00:00:00Z', acceptedAt: '2023-01-10T12:00:00Z' },
+  { id: 'tm1', tenantId: 't1', userId: 'u1', firstName: 'Sarah', lastName: 'Thompson', email: 'sarah.thompson@example.org', photoUrl: 'https://i.pravatar.cc/150?img=5', roleId: 'role-admin', roleName: 'Church Admin', roleColor: '#4338CA', unitScope: 'all', unitScopeName: 'All units', mfaEnabled: true, lastActiveAt: '2024-10-22T08:45:00Z', invitedAt: '2023-01-10T00:00:00Z', acceptedAt: '2023-01-10T12:00:00Z', isLeader: true },
   { id: 'tm2', tenantId: 't1', userId: 'u2', firstName: 'James', lastName: 'King', email: 'james.king@example.org', roleId: 'role-pastor', roleName: 'Pastor', roleColor: '#B45309', unitScope: 'all', unitScopeName: 'All units', mfaEnabled: true, lastActiveAt: '2024-10-21T19:20:00Z', invitedAt: '2023-01-10T00:00:00Z', acceptedAt: '2023-01-11T09:00:00Z' },
   { id: 'tm3', tenantId: 't1', userId: 'u3', firstName: 'Katherine', lastName: 'Lee', email: 'katherine.lee@example.org', photoUrl: 'https://i.pravatar.cc/150?img=8', roleId: 'role-finance', roleName: 'Treasurer', roleColor: '#16A34A', unitScope: 'all', unitScopeName: 'All units', mfaEnabled: false, lastActiveAt: '2024-10-20T13:05:00Z', invitedAt: '2023-04-02T00:00:00Z', acceptedAt: '2023-04-02T15:00:00Z' },
   { id: 'tm4', tenantId: 't1', userId: 'u4', firstName: 'Grace', lastName: 'Hill', email: 'grace.hill@example.org', photoUrl: 'https://i.pravatar.cc/150?img=6', roleId: 'role-media', roleName: 'Media Lead', roleColor: '#0284C7', unitScope: 'unit-media', unitScopeName: 'Media Team', mfaEnabled: false, lastActiveAt: '2024-10-18T10:00:00Z', invitedAt: '2024-02-14T00:00:00Z', acceptedAt: '2024-02-14T18:30:00Z' },
@@ -192,3 +193,16 @@ export const MOCK_ROLES: CustomRole[] = [
   { id: 'role-finance', tenantId: 't1', name: 'Treasurer', color: '#16A34A', permissions: ['members:read', 'finance:read', 'finance:create', 'finance:update', 'finance:export', 'events:read'], isSystem: true, memberCount: 1, createdAt: '2023-01-01T00:00:00Z' },
   { id: 'role-media', tenantId: 't1', name: 'Media Lead', color: '#0284C7', permissions: ['members:read', 'events:read', 'announcements:read', 'announcements:create'], isSystem: false, memberCount: 2, createdAt: '2024-02-01T00:00:00Z' },
 ];
+
+/**
+ * Mutable, in-memory leadership-transfer state. Unlike the other mock lists
+ * above (which services return copies of, while components hold their own
+ * optimistic state), this one is genuinely stateful across the multi-step
+ * initiate → approve → approve flow, so teamService reads and writes it
+ * directly — the thing a real backend's leadership_transfers table would be.
+ */
+export let MOCK_LEADERSHIP_TRANSFER: LeadershipTransferRequest | null = null;
+
+export function setMockLeadershipTransfer(request: LeadershipTransferRequest | null) {
+  MOCK_LEADERSHIP_TRANSFER = request;
+}

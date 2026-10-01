@@ -153,6 +153,8 @@ const staffRoutes = {
     { path: 'team', lazy: screen(() => import('./staff/team/TeamAndRoles'), 'TeamAndRoles') },
     { path: 'team/invite', lazy: screen(() => import('./staff/team/InviteStaff'), 'InviteStaff') },
     { path: 'team/roles/new', lazy: screen(() => import('./staff/team/CustomRoleBuilder'), 'CustomRoleBuilder') },
+    { path: 'team/leadership', lazy: screen(() => import('./staff/team/ChurchLeadership'), 'ChurchLeadership') },
+    { path: 'team/leadership/transfer', lazy: screen(() => import('./staff/team/TransferLeadership'), 'TransferLeadership') },
 
     // Settings
     { path: 'settings', lazy: screen(() => import('./staff/settings/OrganisationSettings'), 'OrganisationSettings') },
