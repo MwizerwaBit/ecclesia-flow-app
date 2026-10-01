@@ -51,12 +51,11 @@ export function NotificationInbox() {
 
       <div className="px-4 mt-6 space-y-3">
         {MOCK_NOTIFICATIONS.map(notification => (
-          <Card 
-            key={notification.id} 
+          <Card
+            key={notification.id}
             padding="md"
-            className={`cursor-pointer transition-all ${
-              !notification.read ? 'border-l-4 border-l-primary bg-primary/5 dark:bg-primary/10' : ''
-            }`}
+            accent={notification.read ? 'none' : 'primary'}
+            className="cursor-pointer transition-all"
           >
             <div className="flex gap-4">
               <div className={`mt-1 p-2 rounded-full shrink-0 ${
