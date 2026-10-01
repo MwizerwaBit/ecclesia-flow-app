@@ -42,6 +42,11 @@ export function MarketingLayout() {
           </Link>
 
           <nav className="flex items-center gap-1">
+            <Link to="/churches">
+              <Button variant="ghost" size="sm">
+                Find a church
+              </Button>
+            </Link>
             <Link to="/pricing">
               <Button variant="ghost" size="sm">
                 Pricing

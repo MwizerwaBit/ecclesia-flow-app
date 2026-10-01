@@ -32,6 +32,19 @@ export interface Organisation {
   createdAt: string;
 }
 
+/**
+ * What a visitor is allowed to see before choosing a church — a small,
+ * public-safe subset of Organisation. No billing, usage, or admin-contact
+ * fields; those stay behind the platform-admin and tenant-admin surfaces.
+ */
+export interface PublicChurchSummary {
+  slug: string;
+  displayName: string;
+  country: string;
+  logoUrl?: string;
+  primaryColor?: string;
+}
+
 export interface OrgListItem {
   id: string;
   displayName: string;

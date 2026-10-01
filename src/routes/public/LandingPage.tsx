@@ -177,8 +177,8 @@ export function LandingPage() {
             <Link to="/pricing" className="text-body-sm text-slate-500 hover:text-primary transition-colors">
               Pricing
             </Link>
-            <Link to="/calendar" className="text-body-sm text-slate-500 hover:text-primary transition-colors">
-              Services
+            <Link to="/churches" className="text-body-sm text-slate-500 hover:text-primary transition-colors">
+              Find a church
             </Link>
             <Link to="/contact" className="text-body-sm text-slate-500 hover:text-primary transition-colors">
               Contact

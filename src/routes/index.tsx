@@ -45,9 +45,15 @@ const marketingRoutes = {
   children: [
     { index: true, lazy: screen(() => import('./public/LandingPage'), 'LandingPage') },
     { path: 'pricing', lazy: screen(() => import('./public/PricingPage'), 'PricingPage') },
-    { path: 'calendar', lazy: screen(() => import('./public/PublicEventCalendar'), 'PublicEventCalendar') },
     { path: 'contact', lazy: screen(() => import('./public/ContactDemo'), 'ContactDemo') },
     { path: 'verify/:hash', lazy: screen(() => import('./public/CertificateVerification'), 'CertificateVerification') },
+
+    // Visitor → choose church → that church's own public page. Separate from
+    // the EcclesiaFlow marketing pages above — this is a congregant looking
+    // for their church, not a prospect evaluating the software.
+    { path: 'churches', lazy: screen(() => import('./public/ChooseChurch'), 'ChooseChurch') },
+    { path: 'c/:slug', lazy: screen(() => import('./public/ChurchLandingPage'), 'ChurchLandingPage') },
+    { path: 'c/:slug/calendar', lazy: screen(() => import('./public/PublicEventCalendar'), 'PublicEventCalendar') },
   ],
 };
 
