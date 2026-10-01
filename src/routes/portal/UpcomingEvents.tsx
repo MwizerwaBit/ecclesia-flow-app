@@ -9,11 +9,10 @@
  */
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
-import { CalendarDays, CalendarPlus, ChevronRight, Clock, MapPin, Search } from 'lucide-react';
+import { CalendarDays, CalendarPlus, Search } from 'lucide-react';
 import { eventsService } from '@/services/eventsService';
-import { Badge, Button, Card, EmptyState, Input, Text } from '@/components/ui';
-import { formatDateShort, formatTime } from '@/lib/formatters';
+import { EventCard } from '@/components/events/EventCard';
+import { Button, EmptyState, Input, Text } from '@/components/ui';
 
 /** Google Calendar template link — works on every platform without a download. */
 function calendarUrl(title: string, startIso: string, location?: string) {
@@ -87,64 +86,19 @@ export function UpcomingEvents() {
 
       <div className="space-y-3">
         {visible.map((event) => (
-          <Card key={event.id} padding="none" variant="elevated">
-            <Link
-              to={`/portal/events/${event.id}`}
-              className="flex items-stretch hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
-            >
-              {/* Date block */}
-              <div className="flex w-20 shrink-0 flex-col items-center justify-center border-r border-slate-100 dark:border-slate-800 bg-primary-light/50 dark:bg-primary/10 py-4">
-                <span className="text-caption font-bold uppercase tracking-wider text-primary">
-                  {formatDateShort(event.startDateTime).split(' ')[0]}
-                </span>
-                <span className="font-display text-h1 leading-none text-primary">
-                  {new Date(event.startDateTime).getDate()}
-                </span>
-              </div>
-
-              <div className="min-w-0 flex-1 p-4">
-                <div className="flex items-start justify-between gap-2 mb-1.5">
-                  <Text variant="h3" className="min-w-0">
-                    {event.title}
-                  </Text>
-                  <ChevronRight size={18} className="text-slate-300 shrink-0 mt-0.5" aria-hidden />
-                </div>
-
-                <Text variant="body-sm" color="muted" className="flex items-center gap-1.5">
-                  <Clock size={13} aria-hidden />
-                  {formatTime(event.startDateTime)}
-                </Text>
-
-                {event.location && (
-                  <Text
-                    variant="body-sm"
-                    color="muted"
-                    className="flex items-center gap-1.5 mt-0.5"
-                  >
-                    <MapPin size={13} aria-hidden />
-                    <span className="truncate">{event.location}</span>
-                  </Text>
-                )}
-
-                <Badge variant="primary" size="sm" className="mt-2 capitalize">
-                  {event.type}
-                </Badge>
-              </div>
-            </Link>
-
-            {/* The one action worth taking without opening the event */}
-            <div className="border-t border-slate-100 dark:border-slate-800 px-3 py-2">
-              <a
-                href={calendarUrl(event.title, event.startDateTime, event.location)}
-                target="_blank"
-                rel="noreferrer"
-              >
+          <EventCard
+            key={event.id}
+            event={event}
+            href={`/portal/events/${event.id}`}
+            typeLabel={event.type}
+            actions={
+              <a href={calendarUrl(event.title, event.startDateTime, event.location)} target="_blank" rel="noreferrer">
                 <Button variant="ghost" size="sm" leftIcon={CalendarPlus}>
                   Add to calendar
                 </Button>
               </a>
-            </div>
-          </Card>
+            }
+          />
         ))}
       </div>
     </div>
