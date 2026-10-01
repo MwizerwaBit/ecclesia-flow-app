@@ -3,7 +3,7 @@
  * @description Realistic mock data for the People module.
  * Shaped like plausible REST responses — swap to real API by changing the service adapter.
  */
-import type { MemberListItem, MemberDetail, MemberStatus, VisitorFollowUp } from '@/types';
+import type { Household, MemberListItem, MemberDetail, MemberStatus, VisitorFollowUp } from '@/types';
 
 const avatarUrls = [
   'https://i.pravatar.cc/150?img=1',
@@ -39,6 +39,9 @@ const rawMembers: Array<Omit<MemberListItem, 'initials'> & {
   { id: 'm13', firstName: 'Liam', lastName: 'Martin', status: 'visitor', unitName: undefined, lastSeenAt: '2024-10-13' },
   { id: 'm14', firstName: 'Mia', lastName: 'Nelson', status: 'active', unitName: 'Youth Group', envelopeNumber: '0233', lastSeenAt: '2024-09-29' },
   { id: 'm15', firstName: 'Noah', lastName: 'Owens', status: 'inactive', unitName: 'Main', envelopeNumber: '0068', lastSeenAt: '2024-07-14' },
+  // Aaron Smith's household (hh-1, see MOCK_HOUSEHOLDS) — the only household fully on file today.
+  { id: 'm16', firstName: 'Emma', lastName: 'Smith', status: 'active', unitName: "Women's Ministry", envelopeNumber: '0043', lastSeenAt: '2024-10-20' },
+  { id: 'm17', firstName: 'Lucas', lastName: 'Smith', status: 'active', unitName: 'Sunday School', lastSeenAt: '2024-10-20' },
 ];
 
 export const MOCK_MEMBERS: MemberListItem[] = rawMembers.map(({ firstName, lastName, ...m }) => ({
@@ -83,6 +86,38 @@ export const MOCK_MEMBER_DETAIL: MemberDetail = {
   createdAt: '2019-03-15T10:00:00Z',
   updatedAt: '2024-10-20T09:15:00Z',
 };
+
+/**
+ * Builds a MemberDetail for any roster id. Only Aaron Smith (m1) has a fully
+ * fleshed-out profile today — everyone else gets their real identity/contact/
+ * status fields plus empty extended fields, rather than fabricated biographical
+ * data. Mirrors what a real system looks like mid-migration: some profiles are
+ * complete, most are not yet.
+ */
+export function getMemberDetail(id: string): MemberDetail {
+  if (id === MOCK_MEMBER_DETAIL.id) return MOCK_MEMBER_DETAIL;
+  const roster = MOCK_MEMBERS.find((m) => m.id === id);
+  if (!roster) return MOCK_MEMBER_DETAIL;
+  return {
+    ...roster,
+    tenantId: MOCK_MEMBER_DETAIL.tenantId,
+    createdAt: MOCK_MEMBER_DETAIL.createdAt,
+    updatedAt: MOCK_MEMBER_DETAIL.updatedAt,
+  };
+}
+
+export const MOCK_HOUSEHOLDS: Household[] = [
+  {
+    id: 'hh-1',
+    tenantId: 'tenant-1',
+    name: 'The Smith Household',
+    headMemberId: 'm1',
+    address: MOCK_MEMBER_DETAIL.address,
+    members: MOCK_MEMBERS.filter((m) => ['m1', 'm16', 'm17'].includes(m.id)),
+    totalGiving: 6150,
+    createdAt: '2019-03-15T10:00:00Z',
+  },
+];
 
 export const MOCK_NOT_SEEN_RECENTLY: MemberListItem[] = MOCK_MEMBERS.filter(
   (m) => {

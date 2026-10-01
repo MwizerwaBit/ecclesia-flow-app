@@ -1,20 +1,24 @@
 /**
- * @file AddMemberForm.tsx
- * @description The full member record, captured in three steps.
+ * @file MemberForm.tsx
+ * @description Add or edit a member record, captured in three steps.
  *
  * Split deliberately: name and contact first, church details second, personal
  * details last and entirely optional. Someone can be saved after step one —
  * the steps that follow enrich a record that already exists, so a half-finished
  * form never means a lost person.
+ *
+ * Shared between `/staff/members/add` and `/staff/members/:id/edit` — same
+ * steps, pre-filled and saving via `update` instead of `create` when an id is
+ * present, mirroring how CreateEditEvent handles the same split.
  */
 import { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Check, UserPlus } from 'lucide-react';
 import type { MemberStatus } from '@/types';
 import { membersService } from '@/services/membersService';
 import { commsService } from '@/services/commsService';
-import { Button, Card, Input, Select, Text } from '@/components/ui';
+import { Button, Card, Input, Select, Skeleton, Text } from '@/components/ui';
 import { cn } from '@/lib/cn';
 
 type Step = 1 | 2 | 3;
@@ -32,7 +36,9 @@ const STATUS_OPTIONS: Array<{ value: MemberStatus; label: string }> = [
   { value: 'inactive', label: 'Inactive' },
 ];
 
-export function AddMemberForm() {
+export function MemberForm() {
+  const { id } = useParams();
+  const isEditing = Boolean(id);
   const navigate = useNavigate();
   const [step, setStep] = useState<Step>(1);
 
@@ -55,11 +61,32 @@ export function AddMemberForm() {
     queryFn: () => commsService.listUnits(),
   });
 
+  // Prefill when editing an existing person.
+  const { isLoading: isLoadingMember } = useQuery({
+    queryKey: ['member', id],
+    queryFn: async () => {
+      const member = await membersService.getById(id!);
+      setFirstName(member.firstName);
+      setLastName(member.lastName);
+      setEmail(member.email ?? '');
+      setPhone(member.phone ?? '');
+      setStatus(member.status);
+      setUnitId(member.unitId ?? '');
+      setEnvelopeNumber(member.envelopeNumber ?? '');
+      setDateOfBirth(member.dateOfBirth ?? '');
+      setOccupation(member.occupation ?? '');
+      setAddressLine1(member.address?.line1 ?? '');
+      setCity(member.address?.city ?? '');
+      return member;
+    },
+    enabled: isEditing,
+  });
+
   const canContinue = firstName.trim().length > 0 && lastName.trim().length > 0;
 
-  const createMember = useMutation({
-    mutationFn: () =>
-      membersService.create({
+  const save = useMutation({
+    mutationFn: () => {
+      const payload = {
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         email: email.trim() || undefined,
@@ -73,15 +100,31 @@ export function AddMemberForm() {
         address: addressLine1.trim()
           ? { line1: addressLine1.trim(), city: city.trim(), country: 'US' }
           : undefined,
-      }),
+      };
+      return isEditing ? membersService.update(id!, payload) : membersService.create(payload);
+    },
     onSuccess: (member) => navigate(`/staff/members/${member.id}`),
   });
+
+  if (isEditing && isLoadingMember) {
+    return (
+      <div className="w-full max-w-2xl mx-auto px-4 py-6 animate-fade-in space-y-6">
+        <Skeleton className="h-7 w-40" />
+        <Card padding="md" className="space-y-4">
+          <Skeleton className="h-11 w-full rounded-lg" />
+          <Skeleton className="h-11 w-full rounded-lg" />
+          <Skeleton className="h-11 w-full rounded-lg" />
+          <Skeleton className="h-11 w-full rounded-lg" />
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-2xl mx-auto px-4 py-6 animate-fade-in">
       <header className="mb-6">
         <Text variant="h1" className="mb-1">
-          Add a person
+          {isEditing ? 'Edit person' : 'Add a person'}
         </Text>
         <Text variant="body" color="muted">
           {STEP_LABELS[step]}
@@ -223,23 +266,23 @@ export function AddMemberForm() {
             variant="primary"
             fullWidth
             leftIcon={Check}
-            isLoading={createMember.isPending}
-            onClick={() => createMember.mutate()}
+            isLoading={save.isPending}
+            onClick={() => save.mutate()}
           >
-            Save person
+            {isEditing ? 'Save changes' : 'Save person'}
           </Button>
         )}
       </div>
 
       {/* Saving early is encouraged rather than hidden */}
-      {step < 3 && canContinue && (
+      {!isEditing && step < 3 && canContinue && (
         <Button
           variant="link"
           fullWidth
           leftIcon={UserPlus}
           className="mt-4"
-          isLoading={createMember.isPending}
-          onClick={() => createMember.mutate()}
+          isLoading={save.isPending}
+          onClick={() => save.mutate()}
         >
           Save now and finish later
         </Button>

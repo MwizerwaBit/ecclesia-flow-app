@@ -9,9 +9,11 @@
  */
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { Navigate } from 'react-router-dom';
 import { Download, Mail, ShieldAlert } from 'lucide-react';
 import type { MemberStatus } from '@/types';
 import { membersService } from '@/services/membersService';
+import { useRole } from '@/hooks/useRole';
 import { Button, Card, Checkbox, SegmentedControl, Text } from '@/components/ui';
 
 interface Field {
@@ -39,6 +41,7 @@ const DEFAULT_FIELDS = new Set(['firstName', 'lastName', 'status', 'unitName', '
 type Scope = 'all' | MemberStatus;
 
 export function MemberCsvExport() {
+  const { can } = useRole();
   const [selected, setSelected] = useState<Set<string>>(DEFAULT_FIELDS);
   const [scope, setScope] = useState<Scope>('all');
 
@@ -46,6 +49,10 @@ export function MemberCsvExport() {
     queryKey: ['members', 'roster'],
     queryFn: () => membersService.list(),
   });
+
+  if (!can('members:export')) {
+    return <Navigate to="/403" replace />;
+  }
 
   const rows = scope === 'all' ? members : members.filter((m) => m.status === scope);
   const sensitiveSelected = FIELDS.filter((f) => f.sensitive && selected.has(f.key));

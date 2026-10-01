@@ -30,10 +30,10 @@ import { membersService } from '@/services/membersService';
 import { certificatesService } from '@/services/certificatesService';
 import { useRole } from '@/hooks/useRole';
 import { DetailLayout } from '@/components/layout';
-import { Avatar, Badge, Button, Card, SegmentedControl, StatTile, Text } from '@/components/ui';
+import { Avatar, Badge, Button, Card, SegmentedControl, Skeleton, StatTile, Text } from '@/components/ui';
 import { formatCurrency, formatDate, formatPercent, formatRelative } from '@/lib/formatters';
 
-type Tab = 'overview' | 'attendance' | 'giving' | 'notes';
+type Tab = 'overview' | 'attendance' | 'giving' | 'sacraments' | 'notes';
 
 export function MemberProfileStaff() {
   const { id = '' } = useParams();
@@ -66,9 +66,31 @@ export function MemberProfileStaff() {
 
   if (isLoading || !member) {
     return (
-      <Text variant="body" color="muted" className="text-center py-16">
-        Loading member…
-      </Text>
+      <div className="w-full max-w-6xl mx-auto px-4 lg:px-6 py-6 animate-fade-in space-y-6">
+        <Skeleton className="h-4 w-32" />
+        <Card padding="lg">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
+            <Skeleton className="size-20 rounded-full shrink-0" />
+            <div className="min-w-0 flex-1 space-y-3">
+              <Skeleton className="h-7 w-48" />
+              <Skeleton className="h-4 w-64" />
+              <div className="flex gap-2 mt-4">
+                <Skeleton className="h-9 w-24 rounded-lg" />
+                <Skeleton className="h-9 w-24 rounded-lg" />
+              </div>
+            </div>
+          </div>
+        </Card>
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-20 rounded-xl" />
+          ))}
+        </div>
+        <div className="grid gap-6 lg:grid-cols-3">
+          <Skeleton className="h-64 rounded-xl lg:col-span-2" />
+          <Skeleton className="h-64 rounded-xl" />
+        </div>
+      </div>
     );
   }
 
@@ -109,14 +131,18 @@ export function MemberProfileStaff() {
             <Button variant="primary" size="sm" leftIcon={MessageCircle}>
               Message
             </Button>
-            <Button variant="secondary" size="sm" leftIcon={Edit}>
-              Edit
-            </Button>
-            <Link to={`/staff/households/${member.householdId ?? member.id}`}>
-              <Button variant="secondary" size="sm" leftIcon={Home}>
-                Household
+            <Link to={`/staff/members/${member.id}/edit`}>
+              <Button variant="secondary" size="sm" leftIcon={Edit}>
+                Edit
               </Button>
             </Link>
+            {member.householdId && (
+              <Link to={`/staff/households/${member.householdId}`}>
+                <Button variant="secondary" size="sm" leftIcon={Home}>
+                  Household
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
       </div>
@@ -151,11 +177,52 @@ export function MemberProfileStaff() {
           { value: 'overview', label: 'Overview' },
           { value: 'attendance', label: 'Attendance' },
           { value: 'giving', label: 'Giving' },
+          { value: 'sacraments', label: 'Sacraments' },
           { value: 'notes', label: 'Notes' },
         ]}
       />
 
       {tab === 'overview' && (
+        <Card padding="md" className="space-y-4">
+          <Text variant="h3">At a glance</Text>
+          <div className="space-y-3">
+            <div className="flex justify-between gap-3">
+              <Text variant="body-sm" color="muted">
+                Group
+              </Text>
+              <Text variant="body-sm" className="font-medium text-right">
+                {member.unitName ?? 'No group'}
+              </Text>
+            </div>
+            <div className="flex justify-between gap-3">
+              <Text variant="body-sm" color="muted">
+                Envelope number
+              </Text>
+              <Text variant="body-sm" className="font-medium text-right">
+                {member.envelopeNumber ?? '—'}
+              </Text>
+            </div>
+            <div className="flex justify-between gap-3">
+              <Text variant="body-sm" color="muted">
+                Most recent sacrament
+              </Text>
+              <Text variant="body-sm" className="font-medium text-right">
+                {sacraments[0] ? `${sacraments[0].type} · ${formatDate(sacraments[0].date)}` : 'None on file'}
+              </Text>
+            </div>
+            <div className="flex justify-between gap-3">
+              <Text variant="body-sm" color="muted">
+                Certificates issued
+              </Text>
+              <Text variant="body-sm" className="font-medium text-right">
+                {certificates.length}
+              </Text>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {tab === 'sacraments' && (
         <Card padding="md" className="space-y-4">
           <Text variant="h3">Sacramental record</Text>
           {sacraments.length === 0 ? (
@@ -297,6 +364,11 @@ export function MemberProfileStaff() {
         <Text variant="label" color="muted" className="mb-3 block">
           Contact
         </Text>
+        {!member.phone && !member.email && !member.address && (
+          <Text variant="body-sm" color="muted">
+            No contact info on file.
+          </Text>
+        )}
         <div className="space-y-3">
           {member.phone && (
             <a href={`tel:${member.phone}`} className="flex items-start gap-3 group">

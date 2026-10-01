@@ -104,10 +104,11 @@ const staffRoutes = {
 
     // People — literal segments are declared before ':id' so they are not read as one
     { path: 'members', lazy: screen(() => import('./staff/MembersList'), 'MembersList') },
-    { path: 'members/add', lazy: screen(() => import('./staff/people/AddMemberForm'), 'AddMemberForm') },
+    { path: 'members/add', lazy: screen(() => import('./staff/people/MemberForm'), 'MemberForm') },
     { path: 'members/not-seen', lazy: screen(() => import('./staff/people/NotSeenRecently'), 'NotSeenRecently') },
     { path: 'members/visitor-followup', lazy: screen(() => import('./staff/people/VisitorFollowUp'), 'VisitorFollowUp') },
     { path: 'members/:id', lazy: screen(() => import('./staff/MemberProfileStaff'), 'MemberProfileStaff') },
+    { path: 'members/:id/edit', lazy: screen(() => import('./staff/people/MemberForm'), 'MemberForm') },
 
     { path: 'members/export', lazy: screen(() => import('./staff/people/MemberCsvExport'), 'MemberCsvExport') },
     { path: 'households/:id', lazy: screen(() => import('./staff/people/HouseholdView'), 'HouseholdView') },

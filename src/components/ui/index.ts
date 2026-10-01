@@ -17,3 +17,4 @@ export * from './EmptyState';
 export * from './SegmentedControl';
 export * from './FilterChips';
 export * from './StatTile';
+export * from './Skeleton';

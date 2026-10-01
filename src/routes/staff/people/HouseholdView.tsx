@@ -4,42 +4,61 @@
  *
  * Households exist because pastoral care and giving both run along family lines:
  * a single envelope often covers a whole house, and a visit is to a home rather
- * than to an individual record.
+ * than to an individual record. Only reachable today from a member profile that
+ * has a `householdId` on file — most people don't yet, which is a real empty
+ * state rather than a missing feature.
  */
 import { useQuery } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
-import { Home, Mail, MapPin, Phone, Users } from 'lucide-react';
+import { Home, Mail, Phone, Users } from 'lucide-react';
 import { membersService } from '@/services/membersService';
-import { Avatar, Badge, Button, Card, StatTile, Text } from '@/components/ui';
+import { Avatar, Badge, Button, Card, EmptyState, Skeleton, StatTile, Text } from '@/components/ui';
 import { formatCurrency } from '@/lib/formatters';
 
 export function HouseholdView() {
   const { id = '' } = useParams();
 
-  const { data: members = [], isLoading } = useQuery({
-    queryKey: ['members', 'roster'],
-    queryFn: () => membersService.list(),
+  const { data: household, isLoading } = useQuery({
+    queryKey: ['household', id],
+    queryFn: () => membersService.getHousehold(id),
+    enabled: Boolean(id),
   });
 
-  const { data: detail } = useQuery({
-    queryKey: ['member', 'detail'],
-    queryFn: () => membersService.getById('m1'),
-  });
-
-  // Stands in for a household endpoint: the first few members share an address.
-  const household = members.slice(0, 4);
-  const [head] = household;
-
-  if (isLoading || !head) {
+  if (isLoading) {
     return (
-      <Text variant="body" color="muted" className="text-center py-16">
-        Loading household…
-      </Text>
+      <div className="w-full max-w-2xl mx-auto px-4 py-6 animate-fade-in space-y-6">
+        <Skeleton className="h-7 w-56" />
+        <Skeleton className="h-16 rounded-xl" />
+        <div className="grid grid-cols-2 gap-3">
+          <Skeleton className="h-20 rounded-xl" />
+          <Skeleton className="h-20 rounded-xl" />
+        </div>
+        <Skeleton className="h-48 rounded-xl" />
+      </div>
     );
   }
 
-  const address = detail?.address;
-  const combinedGiving = (detail?.givingThisYear ?? 0) * 1.6;
+  if (!household) {
+    return (
+      <div className="w-full max-w-2xl mx-auto px-4 py-6 animate-fade-in">
+        <Text variant="h1" className="mb-1">
+          Household
+        </Text>
+        <EmptyState
+          icon={Home}
+          title="No household on file"
+          description="This person isn't linked to a household record yet."
+          action={
+            <Link to="/staff/members">
+              <Button variant="secondary">Back to directory</Button>
+            </Link>
+          }
+        />
+      </div>
+    );
+  }
+
+  const head = household.members.find((m) => m.id === household.headMemberId) ?? household.members[0];
 
   return (
     <div className="w-full max-w-2xl mx-auto px-4 py-6 animate-fade-in space-y-6">
@@ -47,23 +66,23 @@ export function HouseholdView() {
         <div className="flex items-center gap-2 mb-1">
           <Home size={20} className="text-primary shrink-0" aria-hidden />
           <Text variant="h1" className="min-w-0">
-            The {head.lastName} household
+            {household.name}
           </Text>
         </div>
         <Text variant="body" color="muted">
-          {household.length} people at one address · ID {id || 'hh-1'}
+          {household.members.length} people at one address
         </Text>
       </header>
 
-      {address && (
+      {household.address && (
         <Card variant="outline" padding="md">
           <div className="flex items-start gap-3">
-            <MapPin size={18} className="text-slate-400 shrink-0 mt-0.5" aria-hidden />
+            <Home size={18} className="text-slate-400 shrink-0 mt-0.5" aria-hidden />
             <div>
-              <Text variant="body">{address.line1}</Text>
+              <Text variant="body">{household.address.line1}</Text>
               <Text variant="body-sm" color="muted">
-                {address.city}
-                {address.state ? `, ${address.state}` : ''} {address.postalCode}
+                {household.address.city}
+                {household.address.state ? `, ${household.address.state}` : ''} {household.address.postalCode}
               </Text>
             </div>
           </div>
@@ -71,10 +90,10 @@ export function HouseholdView() {
       )}
 
       <div className="grid grid-cols-2 gap-3">
-        <StatTile label="In household" value={String(household.length)} icon={Users} />
+        <StatTile label="In household" value={String(household.members.length)} icon={Users} />
         <StatTile
           label="Combined giving"
-          value={formatCurrency(combinedGiving)}
+          value={formatCurrency(household.totalGiving ?? 0)}
           hint="This year, all members"
         />
       </div>
@@ -85,7 +104,7 @@ export function HouseholdView() {
           Members
         </Text>
         <Card padding="none" className="divide-y divide-slate-100 dark:divide-slate-800">
-          {household.map((member, index) => (
+          {household.members.map((member) => (
             <div key={member.id} className="px-4 py-3">
               <div className="flex items-center gap-3">
                 <Avatar
@@ -101,7 +120,7 @@ export function HouseholdView() {
                     </p>
                   </Link>
                   <Text variant="caption" color="muted">
-                    {index === 0 ? 'Head of household' : 'Member'}
+                    {member.id === head?.id ? 'Head of household' : 'Member'}
                     {member.envelopeNumber ? ` · #${member.envelopeNumber}` : ''}
                   </Text>
                 </div>

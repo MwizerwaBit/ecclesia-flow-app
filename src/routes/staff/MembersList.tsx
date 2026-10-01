@@ -13,8 +13,9 @@ import { Link } from 'react-router-dom';
 import { Download, Mail, Phone, Search, UserPlus, Users } from 'lucide-react';
 import type { MemberListItem, MemberStatus } from '@/types';
 import { membersService } from '@/services/membersService';
+import { useRole } from '@/hooks/useRole';
 import { VisitorQuickAddSheet } from '@/components/people/VisitorQuickAddSheet';
-import { Avatar, Badge, Button, Card, EmptyState, Fab, FilterChips, Input, Text } from '@/components/ui';
+import { Avatar, Badge, Button, Card, EmptyState, Fab, FilterChips, Input, Skeleton, Text } from '@/components/ui';
 import { formatRelative } from '@/lib/formatters';
 
 type Filter = 'all' | MemberStatus;
@@ -34,6 +35,7 @@ const STATUS_BADGE: Record<MemberStatus, { variant: 'success' | 'info' | 'neutra
 };
 
 export function MembersList() {
+  const { can } = useRole();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<Filter>('all');
   const [isSheetOpen, setSheetOpen] = useState(false);
@@ -70,13 +72,15 @@ export function MembersList() {
         </Text>
       </header>
 
-      <div className="flex gap-2 mb-4">
-        <Link to="/staff/members/export" className="ml-auto">
-          <Button variant="ghost" size="sm" leftIcon={Download}>
-            Export
-          </Button>
-        </Link>
-      </div>
+      {can('members:export') && (
+        <div className="flex gap-2 mb-4">
+          <Link to="/staff/members/export" className="ml-auto">
+            <Button variant="ghost" size="sm" leftIcon={Download}>
+              Export
+            </Button>
+          </Link>
+        </div>
+      )}
 
       <Input
         type="search"
@@ -96,9 +100,19 @@ export function MembersList() {
       />
 
       {isLoading && (
-        <Text variant="body" color="muted" className="text-center py-10">
-          Loading the directory…
-        </Text>
+        <div className="grid gap-2.5 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4" aria-label="Loading the directory">
+          {Array.from({ length: 8 }).map((_, i) => (
+            <Card key={i} padding="none">
+              <div className="flex items-center gap-3 p-3.5">
+                <Skeleton className="size-11 rounded-full shrink-0" />
+                <div className="min-w-0 flex-1 space-y-2">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-3 w-20" />
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
       )}
 
       {!isLoading && visible.length === 0 && (
