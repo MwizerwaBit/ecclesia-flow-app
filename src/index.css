@@ -1,0 +1,13 @@
+/**
+ * @file index.css
+ * @description Global stylesheet entry point.
+ *
+ * Order matters:
+ *   1. theme.css  — CSS custom properties (runtime tenant branding) + base resets
+ *   2. tailwindcss — Tailwind v4 engine
+ *   3. @config     — loads the v3-style token config in tailwind.config.ts,
+ *                    which itself derives every value from design-system/tokens.ts
+ */
+@import '../src/design-system/theme.css';
+@import 'tailwindcss';
+@config '../tailwind.config.ts';
