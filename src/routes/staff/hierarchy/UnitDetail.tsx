@@ -6,16 +6,18 @@
  * when their permissions stop at their own unit.
  */
 import { useQuery } from '@tanstack/react-query';
-import { Link, useParams } from 'react-router-dom';
+import { Link, Navigate, useParams } from 'react-router-dom';
 import { CalendarDays, ChevronRight, MapPin, Network, Users } from 'lucide-react';
 import { commsService } from '@/services/commsService';
 import { membersService } from '@/services/membersService';
 import { eventsService } from '@/services/eventsService';
+import { useRole } from '@/hooks/useRole';
 import { Avatar, Badge, Button, Card, StatTile, Text } from '@/components/ui';
 import { formatDateShort, formatTime } from '@/lib/formatters';
 
 export function UnitDetail() {
   const { id = '' } = useParams();
+  const { can } = useRole();
 
   const { data: units = [], isLoading } = useQuery({
     queryKey: ['units'],
@@ -35,6 +37,10 @@ export function UnitDetail() {
   const unit = units.find((u) => u.id === id);
   const subUnits = units.filter((u) => u.parentId === id);
   const unitMembers = members.filter((m) => m.unitName === unit?.name);
+
+  if (!can('hierarchy:read')) {
+    return <Navigate to="/403" replace />;
+  }
 
   if (isLoading || !unit) {
     return (

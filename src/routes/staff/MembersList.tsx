@@ -11,8 +11,9 @@ import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Download, Mail, Phone, Search, UserPlus, Users } from 'lucide-react';
-import type { MemberListItem, MemberStatus } from '@/types';
+import type { HierarchyUnit, MemberListItem, MemberStatus } from '@/types';
 import { membersService } from '@/services/membersService';
+import { commsService } from '@/services/commsService';
 import { useRole } from '@/hooks/useRole';
 import { VisitorQuickAddSheet } from '@/components/people/VisitorQuickAddSheet';
 import { Avatar, Badge, Button, Card, EmptyState, Fab, FilterChips, Input, Skeleton, Text } from '@/components/ui';
@@ -34,8 +35,30 @@ const STATUS_BADGE: Record<MemberStatus, { variant: 'success' | 'info' | 'neutra
   inactive: { variant: 'neutral', label: 'Inactive' },
 };
 
+/** The scoped unit's own name plus every descendant unit's name — ABAC narrows
+ * the directory to a branch's own subtree, not just its exact unit. */
+function unitScopeNames(units: HierarchyUnit[], scopeUnitId: string): Set<string> {
+  const childrenByParent = new Map<string, HierarchyUnit[]>();
+  for (const unit of units) {
+    if (!unit.parentId) continue;
+    childrenByParent.set(unit.parentId, [...(childrenByParent.get(unit.parentId) ?? []), unit]);
+  }
+  const root = units.find((u) => u.id === scopeUnitId);
+  if (!root) return new Set();
+  const names = new Set([root.name]);
+  const queue = [root.id];
+  while (queue.length > 0) {
+    const id = queue.shift()!;
+    for (const child of childrenByParent.get(id) ?? []) {
+      names.add(child.name);
+      queue.push(child.id);
+    }
+  }
+  return names;
+}
+
 export function MembersList() {
-  const { can } = useRole();
+  const { can, unitScopeId } = useRole();
   const [query, setQuery] = useState('');
   const [filter, setFilter] = useState<Filter>('all');
   const [isSheetOpen, setSheetOpen] = useState(false);
@@ -47,10 +70,22 @@ export function MembersList() {
     queryFn: () => membersService.list(),
   });
 
+  const { data: units = [] } = useQuery({
+    queryKey: ['units'],
+    queryFn: () => commsService.listUnits(),
+    enabled: Boolean(unitScopeId),
+  });
+
+  const scopedNames = useMemo(
+    () => (unitScopeId ? unitScopeNames(units, unitScopeId) : null),
+    [units, unitScopeId],
+  );
+
   const visible = useMemo(() => {
     const all = [...justAdded, ...members];
     const q = query.trim().toLowerCase();
     return all
+      .filter((m) => !scopedNames || (m.unitName && scopedNames.has(m.unitName)))
       .filter((m) => (filter === 'all' ? true : m.status === filter))
       .filter((m) =>
         q
@@ -59,7 +94,7 @@ export function MembersList() {
             (m.unitName ?? '').toLowerCase().includes(q)
           : true,
       );
-  }, [members, justAdded, query, filter]);
+  }, [members, justAdded, query, filter, scopedNames]);
 
   return (
     <div className="w-full max-w-6xl mx-auto px-4 py-6 animate-fade-in">
@@ -68,7 +103,9 @@ export function MembersList() {
           Directory
         </Text>
         <Text variant="body" color="muted">
-          {members.length} people in your congregation.
+          {scopedNames
+            ? `${visible.length} ${visible.length === 1 ? 'person' : 'people'} in your unit.`
+            : `${members.length} ${members.length === 1 ? 'person' : 'people'} in your congregation.`}
         </Text>
       </header>
 

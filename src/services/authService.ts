@@ -6,6 +6,7 @@
 import type { AuthSession, LoginCredentials, ResetPasswordPayload } from '@/types';
 import { mockResponse, API_MODE, apiRequest } from './adapter';
 import { ROLES } from '@/lib/constants';
+import { MOCK_ROLES } from '@/mocks/comms.mock';
 
 // ─── Mock sessions per role (dev role switcher) ───────────────────────────────
 const MOCK_SESSIONS: Record<string, AuthSession> = {
@@ -27,6 +28,30 @@ const MOCK_SESSIONS: Record<string, AuthSession> = {
   platform_admin: {
     user: { id: 'u-platform', firstName: 'Platform', lastName: 'Admin', email: 'admin@ecclesiaflow.com', role: ROLES.PLATFORM_ADMIN, mfaEnabled: true, createdAt: '2020-01-01T00:00:00Z' },
     accessToken: 'mock-platform-token',
+    expiresAt: Date.now() + 3600_000,
+  },
+  // Demonstrates the two RBAC/ABAC extension points that a real tenant
+  // membership would resolve at login: a custom (non-system) role's own
+  // permission list, and a unit scope narrower than the whole org. Compare
+  // against plain "staff" in the dev switcher — Team, Structure, Analytics
+  // and billing/integrations settings all disappear, and the Directory only
+  // shows the Media Team unit.
+  staff_scoped: {
+    user: {
+      id: 'u-staff-media',
+      firstName: 'Grace',
+      lastName: 'Hill',
+      email: 'grace@stjudes.org',
+      role: ROLES.STAFF,
+      tenantId: 't1',
+      tenantName: "St. Jude's Cathedral",
+      tenantSlug: 'stjudes',
+      mfaEnabled: true,
+      createdAt: '2024-02-01T00:00:00Z',
+      permissions: MOCK_ROLES.find((r) => r.id === 'role-media')!.permissions,
+      unitScopeId: 'unit-media',
+    },
+    accessToken: 'mock-staff-scoped-token',
     expiresAt: Date.now() + 3600_000,
   },
 };

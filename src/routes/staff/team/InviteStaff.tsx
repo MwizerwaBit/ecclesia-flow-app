@@ -8,14 +8,16 @@
  */
 import { useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { Check, Eye, Mail, Send, ShieldAlert } from 'lucide-react';
 import { teamService } from '@/services/teamService';
 import { commsService } from '@/services/commsService';
 import { PERMISSION_CATALOGUE } from '@/mocks/comms.mock';
+import { useRole } from '@/hooks/useRole';
 import { Button, Card, Input, Select, Text } from '@/components/ui';
 
 export function InviteStaff() {
+  const { can } = useRole();
   const navigate = useNavigate();
 
   const [email, setEmail] = useState('');
@@ -58,6 +60,10 @@ export function InviteStaff() {
       }),
     onSuccess: () => navigate('/staff/team'),
   });
+
+  if (!can('team:invite')) {
+    return <Navigate to="/403" replace />;
+  }
 
   const canInvite = /.+@.+\..+/.test(email.trim()) && Boolean(activeRoleId);
 

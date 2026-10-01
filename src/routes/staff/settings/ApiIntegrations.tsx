@@ -7,8 +7,9 @@
  * nobody should accept from a system holding member records.
  */
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { Check, Copy, KeyRound, Plus, Trash2, Webhook } from 'lucide-react';
+import { useRole } from '@/hooks/useRole';
 import { Badge, BottomSheet, Button, Card, Input, Text } from '@/components/ui';
 import { formatDate, formatRelative } from '@/lib/formatters';
 
@@ -32,10 +33,15 @@ const WEBHOOKS = [
 ];
 
 export function ApiIntegrations() {
+  const { can } = useRole();
   const [isCreateOpen, setCreateOpen] = useState(false);
   const [keyName, setKeyName] = useState('');
   const [createdKey, setCreatedKey] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+
+  if (!can('org:settings')) {
+    return <Navigate to="/403" replace />;
+  }
 
   function createKey() {
     // Only moment the full key exists in the client.

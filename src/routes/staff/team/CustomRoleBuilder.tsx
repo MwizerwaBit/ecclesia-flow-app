@@ -9,10 +9,11 @@
  */
 import { useMemo, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { Check, ShieldAlert } from 'lucide-react';
 import { teamService } from '@/services/teamService';
 import { PERMISSION_CATALOGUE } from '@/mocks/comms.mock';
+import { useRole } from '@/hooks/useRole';
 import { Button, Card, Checkbox, Input, Text } from '@/components/ui';
 import { cn } from '@/lib/cn';
 
@@ -27,6 +28,7 @@ const ROLE_COLORS = [
 ];
 
 export function CustomRoleBuilder() {
+  const { can } = useRole();
   const navigate = useNavigate();
 
   const [name, setName] = useState('');
@@ -40,6 +42,16 @@ export function CustomRoleBuilder() {
       ).length,
     [granted],
   );
+
+  const createRole = useMutation({
+    mutationFn: () =>
+      teamService.createRole({ name: name.trim(), color, permissions: [...granted] }),
+    onSuccess: () => navigate('/staff/team'),
+  });
+
+  if (!can('roles:create')) {
+    return <Navigate to="/403" replace />;
+  }
 
   function toggle(key: string) {
     setGranted((prev) => {
@@ -57,12 +69,6 @@ export function CustomRoleBuilder() {
       return next;
     });
   }
-
-  const createRole = useMutation({
-    mutationFn: () =>
-      teamService.createRole({ name: name.trim(), color, permissions: [...granted] }),
-    onSuccess: () => navigate('/staff/team'),
-  });
 
   const canSave = name.trim().length > 0 && granted.size > 0;
 

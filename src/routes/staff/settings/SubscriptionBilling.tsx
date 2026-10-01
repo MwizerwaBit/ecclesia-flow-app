@@ -7,10 +7,11 @@
  * from adding a member is the wrong way to learn it.
  */
 import { useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { ArrowUpRight, CreditCard, Download, HardDrive, Network, Users } from 'lucide-react';
 import { membersService } from '@/services/membersService';
 import { commsService } from '@/services/commsService';
+import { useRole } from '@/hooks/useRole';
 import { Badge, Button, Card, Text } from '@/components/ui';
 import { formatCurrency, formatDate } from '@/lib/formatters';
 import { cn } from '@/lib/cn';
@@ -69,6 +70,7 @@ function UsageRow({ icon: Icon, label, used, limit, format = String }: UsageRowP
 }
 
 export function SubscriptionBilling() {
+  const { can } = useRole();
   const { data: members = [] } = useQuery({
     queryKey: ['members', 'roster'],
     queryFn: () => membersService.list(),
@@ -78,6 +80,10 @@ export function SubscriptionBilling() {
     queryKey: ['units'],
     queryFn: () => commsService.listUnits(),
   });
+
+  if (!can('org:read')) {
+    return <Navigate to="/403" replace />;
+  }
 
   const isNearAnyLimit =
     members.length / PLAN.limits.members > 0.8 || units.length / PLAN.limits.units > 0.8;

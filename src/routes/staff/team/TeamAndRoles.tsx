@@ -8,10 +8,11 @@
  */
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { Clock, Plus, ShieldAlert, ShieldCheck, UserPlus } from 'lucide-react';
 import type { TeamMember } from '@/types';
 import { teamService } from '@/services/teamService';
+import { useRole } from '@/hooks/useRole';
 import {
   Avatar,
   Badge,
@@ -27,6 +28,7 @@ import { formatRelative } from '@/lib/formatters';
 type Tab = 'people' | 'roles';
 
 export function TeamAndRoles() {
+  const { can } = useRole();
   const [tab, setTab] = useState<Tab>('people');
   const [editing, setEditing] = useState<TeamMember | null>(null);
 
@@ -41,6 +43,10 @@ export function TeamAndRoles() {
   });
 
   const withoutMfa = team.filter((m) => !m.mfaEnabled && m.acceptedAt);
+
+  if (!can('team:read')) {
+    return <Navigate to="/403" replace />;
+  }
 
   return (
     <div className="w-full max-w-5xl mx-auto px-4 py-6 animate-fade-in">

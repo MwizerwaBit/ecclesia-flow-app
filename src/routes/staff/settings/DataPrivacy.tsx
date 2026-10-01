@@ -8,7 +8,9 @@
  * reviews it before it runs.
  */
 import { useState } from 'react';
+import { Navigate } from 'react-router-dom';
 import { Check, Database, Download, FileWarning, ShieldAlert, Trash2 } from 'lucide-react';
+import { useRole } from '@/hooks/useRole';
 import { BottomSheet, Button, Card, Input, Select, Text } from '@/components/ui';
 
 const EXPORT_CONTENTS = [
@@ -28,11 +30,16 @@ const RETENTION_OPTIONS = [
 ];
 
 export function DataPrivacy() {
+  const { can } = useRole();
   const [retention, setRetention] = useState('0');
   const [isErasureOpen, setErasureOpen] = useState(false);
   const [memberName, setMemberName] = useState('');
   const [reason, setReason] = useState('');
   const [isRequested, setRequested] = useState(false);
+
+  if (!can('org:settings')) {
+    return <Navigate to="/403" replace />;
+  }
 
   return (
     <div className="w-full max-w-2xl mx-auto px-4 py-6 animate-fade-in space-y-6">

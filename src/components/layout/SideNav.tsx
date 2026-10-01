@@ -19,6 +19,8 @@ export interface NavSection {
     href: string;
     icon: LucideIcon;
     badgeCount?: number;
+    /** When set, the item is only shown to sessions whose role grants this permission. */
+    permission?: string;
   }>;
 }
 

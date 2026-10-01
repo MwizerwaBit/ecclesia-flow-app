@@ -20,6 +20,21 @@ export interface User {
   mfaEnabled: boolean;
   createdAt: string;
   lastLoginAt?: string;
+  /**
+   * Resolved permission set for this session, as a real backend would embed
+   * in a JWT once a tenant membership's role is a custom (CustomRoleBuilder)
+   * role rather than one of the four system roles. When set, this replaces
+   * the system role's default permission list entirely. Unset for every
+   * built-in dev-login session today — system role defaults still apply.
+   */
+  permissions?: string[];
+  /**
+   * ABAC attribute: the hierarchy unit (and its descendants) this session is
+   * scoped to, mirroring tenant_memberships.unit_scope_id in the database
+   * design. Unset = whole organisation, which is today's behaviour for every
+   * built-in dev-login session.
+   */
+  unitScopeId?: string;
 }
 
 export interface AuthSession {

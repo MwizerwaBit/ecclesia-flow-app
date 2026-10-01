@@ -6,7 +6,7 @@
  *   const { can, role, isStaff } = useRole();
  *   if (can('finance:read')) { ... }
  */
-import { useCurrentRole } from './useAuthStore';
+import { useCurrentRole, useCurrentUser } from './useAuthStore';
 import { ROLES, type Role } from '@/lib/constants';
 
 // Permission map — what each role can do
@@ -95,14 +95,21 @@ interface UseRoleReturn {
   isBoard: boolean;
   isPlatformAdmin: boolean;
   isAuthenticated: boolean;
+  /** ABAC attribute: set when this session is scoped to one hierarchy unit and its descendants, rather than the whole org. */
+  unitScopeId: string | null;
 }
 
 export function useRole(): UseRoleReturn {
   const role = useCurrentRole();
+  const user = useCurrentUser();
 
   const can = (permission: string): boolean => {
     if (!role) return false;
-    const permissions = ROLE_PERMISSIONS[role] ?? [];
+    // A tenant membership whose role is a custom (CustomRoleBuilder) role
+    // carries its own resolved permission list — that replaces the system
+    // role default entirely instead of merging with it, since a custom role
+    // is deliberately a different, explicit checklist, not an addition to it.
+    const permissions = user?.permissions ?? ROLE_PERMISSIONS[role] ?? [];
     // Platform admin has wildcard
     if (permissions.includes('*')) return true;
     return permissions.includes(permission);
@@ -116,5 +123,6 @@ export function useRole(): UseRoleReturn {
     isBoard: role === ROLES.BOARD,
     isPlatformAdmin: role === ROLES.PLATFORM_ADMIN,
     isAuthenticated: role !== null,
+    unitScopeId: user?.unitScopeId ?? null,
   };
 }

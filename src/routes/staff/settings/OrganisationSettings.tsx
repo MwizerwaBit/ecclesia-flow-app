@@ -23,6 +23,7 @@ import {
   ShieldCheck,
   Users,
 } from 'lucide-react';
+import { useRole } from '@/hooks/useRole';
 import { Button, Card, Input, Select, Text } from '@/components/ui';
 import { cn } from '@/lib/cn';
 
@@ -41,14 +42,17 @@ const BRAND_COLORS = [
 const SETTINGS_LINKS = [
   { href: '/staff/settings/security', label: 'Security', description: 'Password, two-factor, active sessions', icon: ShieldCheck },
   { href: '/staff/settings/notifications', label: 'Notifications', description: 'What reaches you, and how', icon: Bell },
-  { href: '/staff/team', label: 'Team & roles', description: 'Who can sign in and what they can do', icon: Users },
-  { href: '/staff/settings/billing', label: 'Plan & billing', description: 'Your plan, usage and invoices', icon: CreditCard },
-  { href: '/staff/settings/integrations', label: 'API & integrations', description: 'Keys and webhooks', icon: Plug },
-  { href: '/staff/settings/data', label: 'Data & privacy', description: 'Exports, retention, erasure requests', icon: Database },
-  { href: '/staff/hierarchy', label: 'Structure', description: 'Units, branches and groups', icon: Network },
+  { href: '/staff/team', label: 'Team & roles', description: 'Who can sign in and what they can do', icon: Users, permission: 'team:read' },
+  { href: '/staff/settings/billing', label: 'Plan & billing', description: 'Your plan, usage and invoices', icon: CreditCard, permission: 'org:read' },
+  { href: '/staff/settings/integrations', label: 'API & integrations', description: 'Keys and webhooks', icon: Plug, permission: 'org:settings' },
+  { href: '/staff/settings/data', label: 'Data & privacy', description: 'Exports, retention, erasure requests', icon: Database, permission: 'org:settings' },
+  { href: '/staff/hierarchy', label: 'Structure', description: 'Units, branches and groups', icon: Network, permission: 'hierarchy:read' },
 ];
 
 export function OrganisationSettings() {
+  const { can } = useRole();
+  const canEditOrg = can('org:settings');
+  const visibleLinks = SETTINGS_LINKS.filter((link) => !link.permission || can(link.permission));
   const [displayName, setDisplayName] = useState('St. Jude’s Parish');
   const [primaryColor, setPrimaryColor] = useState(BRAND_COLORS[0].value);
   const [language, setLanguage] = useState('en');
@@ -68,11 +72,15 @@ export function OrganisationSettings() {
           Settings
         </Text>
         <Text variant="body" color="muted">
-          How your church appears, and how the app behaves.
+          {canEditOrg
+            ? 'How your church appears, and how the app behaves.'
+            : 'Your personal account settings.'}
         </Text>
       </header>
 
-      {/* Branding */}
+      {/* Branding — org-admin only; everyone else goes straight to "More" below for their own security/notifications. */}
+      {canEditOrg && (
+      <>
       <div>
         <Text variant="h2" className="mb-3">
           Branding
@@ -217,6 +225,8 @@ export function OrganisationSettings() {
           </Text>
         </div>
       )}
+      </>
+      )}
 
       {/* Everything else */}
       <div>
@@ -224,7 +234,7 @@ export function OrganisationSettings() {
           More
         </Text>
         <Card padding="none" className="divide-y divide-slate-100 dark:divide-slate-800">
-          {SETTINGS_LINKS.map(({ href, label, description, icon: Icon }) => (
+          {visibleLinks.map(({ href, label, description, icon: Icon }) => (
             <Link
               key={href}
               to={href}

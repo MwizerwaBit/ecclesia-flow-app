@@ -15,7 +15,7 @@ export function DevRoleSwitcher() {
 
   const currentRole = session?.user?.role || 'Logged out';
 
-  const switchRole = async (roleKey: 'member' | 'staff' | 'board' | 'platform_admin') => {
+  const switchRole = async (roleKey: 'member' | 'staff' | 'staff_scoped' | 'board' | 'platform_admin') => {
     const newSession = await authService.loginWithRole(roleKey);
     setSession(newSession);
     setIsOpen(false);
@@ -32,6 +32,7 @@ export function DevRoleSwitcher() {
           <div className="space-y-1">
             <button onClick={() => switchRole('member')} className="w-full text-left px-2 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded">Member</button>
             <button onClick={() => switchRole('staff')} className="w-full text-left px-2 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded">Staff</button>
+            <button onClick={() => switchRole('staff_scoped')} className="w-full text-left px-2 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded">Staff (Media, scoped)</button>
             <button onClick={() => switchRole('board')} className="w-full text-left px-2 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded">Board Admin</button>
             <button onClick={() => switchRole('platform_admin')} className="w-full text-left px-2 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded">Platform Admin</button>
             <hr className="my-1 border-slate-200 dark:border-slate-700" />

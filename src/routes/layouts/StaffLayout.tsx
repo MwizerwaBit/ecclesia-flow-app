@@ -24,9 +24,9 @@ import {
 } from 'lucide-react';
 import { useRole } from '@/hooks/useRole';
 import { useCurrentUser } from '@/hooks/useAuthStore';
-import { SideNav, BottomTabBar, NavDrawer, TopBar, TopHeader } from '@/components/layout';
+import { SideNav, BottomTabBar, NavDrawer, TopBar, TopHeader, type NavSection } from '@/components/layout';
 
-const SIDEBAR_SECTIONS = [
+const SIDEBAR_SECTIONS: NavSection[] = [
   {
     items: [{ label: 'Dashboard', href: '/staff/dashboard', icon: Home }],
   },
@@ -63,18 +63,28 @@ const SIDEBAR_SECTIONS = [
       { label: 'Announcements', href: '/staff/comms/announcements', icon: Megaphone },
       { label: 'Certificates', href: '/staff/certificates', icon: Award },
       { label: 'Documents', href: '/staff/documents', icon: FolderOpen },
-      { label: 'Structure', href: '/staff/hierarchy', icon: Network },
-      { label: 'Analytics', href: '/staff/analytics', icon: BarChart3 },
+      { label: 'Structure', href: '/staff/hierarchy', icon: Network, permission: 'hierarchy:read' },
+      { label: 'Analytics', href: '/staff/analytics', icon: BarChart3, permission: 'analytics:read' },
     ],
   },
   {
     title: 'Administration',
     items: [
-      { label: 'Team & roles', href: '/staff/team', icon: Users },
+      { label: 'Team & roles', href: '/staff/team', icon: Users, permission: 'team:read' },
       { label: 'Settings', href: '/staff/settings', icon: Settings },
     ],
   },
 ];
+
+/** Drops items (and whole sections, if they end up empty) the current session can't reach. */
+function visibleSections(sections: typeof SIDEBAR_SECTIONS, can: (permission: string) => boolean) {
+  return sections
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((item) => !item.permission || can(item.permission)),
+    }))
+    .filter((section) => section.items.length > 0);
+}
 
 /** Ordered longest-first; the first matching prefix names the screen. */
 const SECTION_TITLES: Array<[string, string]> = [
@@ -110,7 +120,7 @@ const MOBILE_TABS = [
 ];
 
 export function StaffLayout() {
-  const { isStaff, isAuthenticated, isBoard } = useRole();
+  const { isStaff, isAuthenticated, isBoard, can } = useRole();
   const user = useCurrentUser();
   const location = useLocation();
   const [isMenuOpen, setMenuOpen] = useState(false);
@@ -119,10 +129,12 @@ export function StaffLayout() {
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
-  
+
   if (!isStaff && !isBoard) {
     return <Navigate to="/403" replace />;
   }
+
+  const sections = visibleSections(SIDEBAR_SECTIONS, can);
 
   // Longest prefix wins, so /staff/finance/batches resolves before /staff/finance.
   // The words here match what each screen calls itself and what the nav calls it —
@@ -145,7 +157,7 @@ export function StaffLayout() {
     // can't reliably clear the fixed tab bar.
     <div className="flex h-dvh overflow-hidden bg-background-light dark:bg-background-dark">
       <SideNav
-        sections={SIDEBAR_SECTIONS}
+        sections={sections}
         orgName={user?.tenantName ?? 'EcclesiaFlow'}
         brandSubtitle="Church management"
         user={signedInAs}
@@ -176,7 +188,7 @@ export function StaffLayout() {
       <NavDrawer
         open={isMenuOpen}
         onClose={() => setMenuOpen(false)}
-        sections={SIDEBAR_SECTIONS}
+        sections={sections}
         orgName={user?.tenantName}
       />
     </div>

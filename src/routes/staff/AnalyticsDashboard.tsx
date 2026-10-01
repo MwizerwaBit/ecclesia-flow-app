@@ -7,8 +7,10 @@
  * short series, and a chart library would be the heaviest thing on the page.
  */
 import { useQuery } from '@tanstack/react-query';
+import { Navigate } from 'react-router-dom';
 import { Download, HeartHandshake, TrendingUp, UserPlus, Users } from 'lucide-react';
 import { financeService } from '@/services/financeService';
+import { useRole } from '@/hooks/useRole';
 import { Card, Button, StatTile, Text } from '@/components/ui';
 import { formatCurrencyCompact, formatPercent } from '@/lib/formatters';
 
@@ -66,10 +68,15 @@ function Sparkline({ values, label }: { values: number[]; label: string }) {
 }
 
 export function AnalyticsDashboard() {
+  const { can } = useRole();
   const { data: dashboard } = useQuery({
     queryKey: ['finance', 'dashboard'],
     queryFn: () => financeService.getDashboard(),
   });
+
+  if (!can('analytics:read')) {
+    return <Navigate to="/403" replace />;
+  }
 
   const latestAttendance = ATTENDANCE_12W[ATTENDANCE_12W.length - 1];
   const firstAttendance = ATTENDANCE_12W[0];

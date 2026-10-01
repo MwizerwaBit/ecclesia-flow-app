@@ -9,10 +9,11 @@
  */
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { ChevronDown, ChevronRight, Network, Plus, Users } from 'lucide-react';
 import type { HierarchyUnit } from '@/types';
 import { commsService } from '@/services/commsService';
+import { useRole } from '@/hooks/useRole';
 import { AddEditUnitSheet } from './AddEditUnitSheet';
 import { Badge, Button, Card, EmptyState, Fab, Text } from '@/components/ui';
 import { cn } from '@/lib/cn';
@@ -112,6 +113,7 @@ function UnitRow({ node, depth, collapsedIds, onToggle, onAddChild }: UnitRowPro
 }
 
 export function HierarchyTreeView() {
+  const { can } = useRole();
   const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
   const [sheetParent, setSheetParent] = useState<HierarchyUnit | null | undefined>(undefined);
 
@@ -122,6 +124,10 @@ export function HierarchyTreeView() {
 
   const tree = useMemo(() => buildTree(units), [units]);
   const deepest = units.reduce((max, u) => Math.max(max, u.depth), 0);
+
+  if (!can('hierarchy:read')) {
+    return <Navigate to="/403" replace />;
+  }
 
   function toggle(id: string) {
     setCollapsedIds((prev) => {
