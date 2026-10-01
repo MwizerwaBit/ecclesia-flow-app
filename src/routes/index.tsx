@@ -72,6 +72,18 @@ const publicRoutes = {
     { path: 'verify-email', lazy: screen(() => import('./auth/AuthStatusScreens'), 'VerificationWaiting') },
     { path: 'account-locked', lazy: screen(() => import('./auth/AuthStatusScreens'), 'AccountLocked') },
     { path: 'session-expired', lazy: screen(() => import('./auth/AuthStatusScreens'), 'SessionExpired') },
+  ],
+};
+
+// --- Onboarding ---
+// Deliberately not under publicRoutes/PublicLayout: registering (step 1) signs
+// the new leader in immediately, so PublicLayout's "redirect away if already
+// authenticated" guard would bounce them straight to the dashboard before the
+// wizard ever rendered. Both screens already provide their own full-page
+// chrome, so no layout wrapper is needed here at all.
+const onboardingRoutes = {
+  path: '/',
+  children: [
     { path: 'onboarding/complete', lazy: screen(() => import('./onboarding/WizardComplete'), 'WizardComplete') },
     {
       path: 'onboarding',
@@ -234,6 +246,7 @@ const errorRoutes = [
 export const router = createBrowserRouter([
   marketingRoutes,
   publicRoutes,
+  onboardingRoutes,
   memberRoutes,
   staffRoutes,
   boardRoutes,

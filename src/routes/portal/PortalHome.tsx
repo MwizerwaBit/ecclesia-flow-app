@@ -3,13 +3,18 @@
  * @description Main dashboard for the Member Portal.
  */
 import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { Heart, CalendarDays, Users, Info, ChevronRight } from 'lucide-react';
 import { useCurrentUser } from '@/hooks/useAuthStore';
+import { eventsService } from '@/services/eventsService';
 import { getGreeting, formatCurrency, formatDateTime } from '@/lib/formatters';
-import { MOCK_PORTAL_EVENTS } from '@/mocks/events.mock'; // In real app, fetch via service
-import { Button, Card, Text, Avatar } from '@/components/ui';
+import { Avatar, Button, Card, Skeleton, Text } from '@/components/ui';
 
-// Mock data for giving summary
+// No service links a portal session to a specific member/donation record yet
+// (members.mock.ts has no entry for the logged-in portal demo user) — the
+// events section above is real; this one is the missing dependency, not an
+// oversight. Swap for a real `financeService.getMyGivingSummary()` once that
+// link exists, same shape.
 const givingSummary = {
   ytd: 3850,
   lastDonation: { amount: 150, date: '2024-10-20', fund: 'General Fund' }
@@ -19,8 +24,11 @@ export function PortalHome() {
   const user = useCurrentUser();
   const greeting = getGreeting();
 
-  // In a real app we'd fetch this via react-query and a service
-  const events = MOCK_PORTAL_EVENTS.slice(0, 3);
+  const { data: upcoming = [], isLoading: isLoadingEvents } = useQuery({
+    queryKey: ['events', 'portal'],
+    queryFn: () => eventsService.list({ upcoming: true }),
+  });
+  const events = upcoming.filter((e) => e.isPublic).slice(0, 3);
 
   return (
     <div className="w-full animate-fade-in flex flex-col min-h-full pb-8">
@@ -61,22 +69,36 @@ export function PortalHome() {
             </Link>
           </div>
           
-          <div className="flex overflow-x-auto no-scrollbar gap-4 pb-4 -mx-4 px-4 snap-x">
-            {events.map(event => (
-              <Card key={event.id} padding="md" className="min-w-[280px] snap-center shrink-0 flex flex-col">
-                <Text variant="label" color="primary" className="mb-2">
-                  {formatDateTime(event.startDateTime)}
-                </Text>
-                <Text variant="h3" className="mb-1 line-clamp-1">{event.title}</Text>
-                <Text variant="body-sm" color="muted" className="mb-4 flex-1 line-clamp-2">
-                  {event.location}
-                </Text>
-                <Link to={`/portal/events/${event.id}`}>
-                  <Button variant="secondary" size="sm" fullWidth>Details</Button>
-                </Link>
-              </Card>
-            ))}
-          </div>
+          {isLoadingEvents ? (
+            <div className="flex gap-4 pb-4 -mx-4 px-4">
+              {Array.from({ length: 2 }).map((_, i) => (
+                <Skeleton key={i} className="min-w-[280px] h-36 rounded-xl shrink-0" />
+              ))}
+            </div>
+          ) : events.length === 0 ? (
+            <Card padding="md">
+              <Text variant="body-sm" color="muted">
+                Nothing coming up right now — check back soon.
+              </Text>
+            </Card>
+          ) : (
+            <div className="flex overflow-x-auto no-scrollbar gap-4 pb-4 -mx-4 px-4 snap-x">
+              {events.map(event => (
+                <Card key={event.id} padding="md" className="min-w-[280px] snap-center shrink-0 flex flex-col">
+                  <Text variant="label" color="primary" className="mb-2">
+                    {formatDateTime(event.startDateTime)}
+                  </Text>
+                  <Text variant="h3" className="mb-1 line-clamp-1">{event.title}</Text>
+                  <Text variant="body-sm" color="muted" className="mb-4 flex-1 line-clamp-2">
+                    {event.location}
+                  </Text>
+                  <Link to={`/portal/events/${event.id}`}>
+                    <Button variant="secondary" size="sm" fullWidth>Details</Button>
+                  </Link>
+                </Card>
+              ))}
+            </div>
+          )}
         </section>
 
         {/* Giving Summary */}

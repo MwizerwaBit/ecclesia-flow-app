@@ -11,7 +11,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { Check, FileText, Mail, Printer } from 'lucide-react';
 import { membersService } from '@/services/membersService';
-import { Button, Card, SegmentedControl, Select, Text } from '@/components/ui';
+import { Button, Card, EmptyState, SegmentedControl, Select, Text } from '@/components/ui';
 import { formatPercent } from '@/lib/formatters';
 
 type Delivery = 'email' | 'print';
@@ -100,6 +100,14 @@ export function ContributionStatements() {
         <FileText size={28} className="text-slate-300 dark:text-slate-600" aria-hidden />
       </Card>
 
+      {recipients.length === 0 && (
+        <EmptyState
+          icon={FileText}
+          title="Nothing to generate yet"
+          description="No one in the directory has an envelope number on file, so there's no giving to report against."
+        />
+      )}
+
       {/* Progress — real counts, not a spinner */}
       {(isGenerating || generatedCount > 0) && (
         <Card padding="md">
@@ -146,6 +154,7 @@ export function ContributionStatements() {
         fullWidth
         leftIcon={delivery === 'email' ? Mail : Printer}
         isLoading={isGenerating}
+        disabled={recipients.length === 0}
         onClick={start}
       >
         {isGenerating

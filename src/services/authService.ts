@@ -56,7 +56,43 @@ const MOCK_SESSIONS: Record<string, AuthSession> = {
   },
 };
 
+export interface RegisterPayload {
+  churchName: string;
+  fullName: string;
+  email: string;
+  password: string;
+}
+
 export const authService = {
+  /**
+   * Step 1 of onboarding: register the founding church leader. The account
+   * created here is the one the leadership-transfer flow (teamService) later
+   * lets hand off to someone else — registering doesn't just create a login,
+   * it designates who the org is accountable to until that happens.
+   */
+  async register(payload: RegisterPayload): Promise<AuthSession> {
+    if (API_MODE === 'mock') {
+      const [firstName, ...rest] = payload.fullName.trim().split(' ');
+      return mockResponse<AuthSession>({
+        user: {
+          id: `u-${Date.now()}`,
+          firstName: firstName || payload.fullName,
+          lastName: rest.join(' '),
+          email: payload.email,
+          role: ROLES.STAFF,
+          tenantId: 't1',
+          tenantName: payload.churchName,
+          tenantSlug: payload.churchName.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-'),
+          mfaEnabled: false,
+          createdAt: new Date().toISOString(),
+        },
+        accessToken: `mock-registered-token-${Date.now()}`,
+        expiresAt: Date.now() + 3_600_000,
+      });
+    }
+    return apiRequest<AuthSession>('/auth/register', { method: 'POST', body: JSON.stringify(payload) });
+  },
+
   async login(credentials: LoginCredentials): Promise<AuthSession> {
     if (API_MODE === 'mock') {
       // In mock mode, email domain determines role for dev convenience

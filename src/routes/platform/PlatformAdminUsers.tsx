@@ -10,7 +10,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Eye, Mail, ShieldAlert, ShieldCheck, UserPlus } from 'lucide-react';
 import { platformService } from '@/services/platformService';
-import { Avatar, Badge, BottomSheet, Button, Card, Input, Select, Text } from '@/components/ui';
+import { Avatar, Badge, BottomSheet, Button, Card, EmptyState, Input, Select, Text } from '@/components/ui';
 import { formatRelative } from '@/lib/formatters';
 
 const LEVELS = [
@@ -71,6 +71,19 @@ export function PlatformAdminUsers() {
         <Text variant="body" color="muted" className="text-center py-10">
           Loading the team…
         </Text>
+      )}
+
+      {!isLoading && admins.length === 0 && (
+        <EmptyState
+          icon={ShieldCheck}
+          title="No platform admins yet"
+          description="Invite the first person who needs cross-tenant access."
+          action={
+            <Button variant="primary" leftIcon={UserPlus} onClick={() => setInviteOpen(true)}>
+              Invite a platform admin
+            </Button>
+          }
+        />
       )}
 
       <div className="space-y-2.5">

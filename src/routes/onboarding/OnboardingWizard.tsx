@@ -2,9 +2,13 @@
  * @file OnboardingWizard.tsx
  * @description Multi-step onboarding flow for new organisations.
  */
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Building2, Palette, Network, UserPlus, Calendar, CheckCircle2, ArrowRight, ArrowLeft } from 'lucide-react';
+import type { AuthSession } from '@/types';
+import { useAuthStore, useCurrentUser } from '@/hooks/useAuthStore';
+import { membersService } from '@/services/membersService';
+import { eventsService } from '@/services/eventsService';
 import { Button, Input, Card, Text, Select } from '@/components/ui';
 
 // Step definitions
@@ -20,10 +24,24 @@ export function OnboardingWizard() {
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const user = useCurrentUser();
+  const { session, setSession } = useAuthStore();
+
+  // Applied once, after this screen (not /register + PublicLayout) is what's
+  // mounted — see the comment in RegisterScreen for why that ordering matters.
+  const hasAppliedPendingSession = useRef(false);
+  const pendingSession = (location.state as { pendingSession?: AuthSession } | null)?.pendingSession;
+  useEffect(() => {
+    if (pendingSession && !hasAppliedPendingSession.current) {
+      hasAppliedPendingSession.current = true;
+      setSession(pendingSession);
+    }
+  }, [pendingSession, setSession]);
 
   // Wizard State (in a real app, this would be form state via react-hook-form)
   const [formData, setFormData] = useState({
-    orgName: '',
+    orgName: pendingSession?.user.tenantName ?? '',
     orgType: 'church',
     primaryColor: '#4F46E5',
     hasMultipleCampuses: 'no',
@@ -53,8 +71,44 @@ export function OnboardingWizard() {
 
   const completeWizard = async () => {
     setIsSubmitting(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
+
+    // The org-identity fields actually take effect on the session, rather
+    // than being collected and discarded — the name/colour picked in steps 1
+    // and 2 are what the rest of the app (sidebar brand, settings) shows
+    // immediately afterward.
+    if (session && user) {
+      setSession({
+        ...session,
+        user: {
+          ...user,
+          tenantName: formData.orgName.trim() || user.tenantName,
+          primaryColor: formData.primaryColor,
+        },
+      });
+    }
+
+    // Both remaining steps are explicitly skippable — only act on them if
+    // the person actually filled something in.
+    if (formData.firstMemberName.trim()) {
+      const [firstName, ...rest] = formData.firstMemberName.trim().split(' ');
+      await membersService.create({
+        firstName,
+        lastName: rest.join(' ') || '—',
+        email: formData.firstMemberEmail.trim() || undefined,
+        status: 'active',
+      });
+    }
+    if (formData.firstEventName.trim() && formData.firstEventDate) {
+      await eventsService.create({
+        title: formData.firstEventName.trim(),
+        type: 'service',
+        startDateTime: formData.firstEventDate,
+        attendanceMode: 'individual',
+        isPublic: true,
+        status: 'published',
+      });
+    }
+
     setIsSubmitting(false);
     // Land on the completion screen rather than the dashboard — finishing setup
     // deserves the acknowledgement, and that screen hands them on from there.
@@ -137,9 +191,10 @@ export function OnboardingWizard() {
       case 3:
         return (
           <div className="space-y-4 animate-fade-in">
-            <Text variant="h2" className="mb-4">Add your first member</Text>
+            <Text variant="h2" className="mb-4">Add your first congregant</Text>
             <Text variant="body" color="muted" className="mb-4">
-              Let's populate your directory. You can add yourself or a test user.
+              You're already set up as the account leading this workspace — this starts the
+              directory with someone else. Skip it for now if you'd rather import people later.
             </Text>
             <Input 
               label="Full Name" 

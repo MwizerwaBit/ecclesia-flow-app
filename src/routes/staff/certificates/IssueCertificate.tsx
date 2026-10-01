@@ -104,6 +104,12 @@ export function IssueCertificate() {
           }}
         />
 
+        {memberQuery.trim() && !memberId && matches.length === 0 && (
+          <Text variant="caption" color="muted" className="block mt-1.5">
+            No one matches that.
+          </Text>
+        )}
+
         {matches.length > 0 && (
           <Card
             padding="none"

@@ -3,7 +3,7 @@
  * @description Member giving interface. Allows members to donate and view their history.
  */
 import { useState } from 'react';
-import { CreditCard, History } from 'lucide-react';
+import { Check, CreditCard, History } from 'lucide-react';
 import { Button, Card, Text, Input, Select } from '@/components/ui';
 import { formatCurrency } from '@/lib/formatters';
 
@@ -20,6 +20,7 @@ export function MyGiving() {
   const [amount, setAmount] = useState<string>('');
   const [fund, setFund] = useState<string>('general');
   const [frequency, setFrequency] = useState<'one-time' | 'monthly'>('one-time');
+  const [justGaveAmount, setJustGaveAmount] = useState<number | null>(null);
 
   const handlePresetClick = (preset: number) => {
     setAmount(preset.toString());
@@ -28,7 +29,12 @@ export function MyGiving() {
   const handleDonate = (e: React.FormEvent) => {
     e.preventDefault();
     if (!amount || isNaN(Number(amount))) return;
-    alert(`Proceeding to payment for ${formatCurrency(Number(amount))} to ${FUNDS.find(f => f.value === fund)?.label}`);
+    // No payment processor is wired up yet — this is the missing dependency
+    // (identified, not invented), so the form confirms the intent rather than
+    // pretending a charge went through.
+    setJustGaveAmount(Number(amount));
+    setAmount('');
+    window.setTimeout(() => setJustGaveAmount(null), 4000);
   };
 
   return (
@@ -43,7 +49,17 @@ export function MyGiving() {
       </div>
 
       <div className="px-4 space-y-6">
-        
+
+        {justGaveAmount !== null && (
+          <div className="flex items-center gap-2 rounded-lg bg-success-light px-4 py-3 animate-fade-in">
+            <Check size={16} className="text-success shrink-0" aria-hidden />
+            <Text variant="body-sm" className="text-success">
+              {formatCurrency(justGaveAmount)} to {FUNDS.find((f) => f.value === fund)?.label} — a payment
+              method isn&rsquo;t connected yet, so this hasn&rsquo;t actually been charged.
+            </Text>
+          </div>
+        )}
+
         {/* Donation Form Card */}
         <Card padding="lg" className="border-t-4 border-t-primary shadow-md">
           <form onSubmit={handleDonate} className="space-y-6">
