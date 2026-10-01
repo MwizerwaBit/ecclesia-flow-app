@@ -16,7 +16,6 @@ import {
   CreditCard,
   Database,
   Globe,
-  ImagePlus,
   Network,
   Palette,
   Plug,
@@ -24,6 +23,7 @@ import {
   Users,
 } from 'lucide-react';
 import { useRole } from '@/hooks/useRole';
+import { MediaPicker } from '@/components/media/MediaPicker';
 import { Button, Card, Input, Select, Text } from '@/components/ui';
 import { cn } from '@/lib/cn';
 
@@ -54,6 +54,7 @@ export function OrganisationSettings() {
   const canEditOrg = can('org:settings');
   const visibleLinks = SETTINGS_LINKS.filter((link) => !link.permission || can(link.permission));
   const [displayName, setDisplayName] = useState('St. Jude’s Parish');
+  const [logoUrl, setLogoUrl] = useState<string | undefined>(undefined);
   const [primaryColor, setPrimaryColor] = useState(BRAND_COLORS[0].value);
   const [language, setLanguage] = useState('en');
   const [timezone, setTimezone] = useState('America/Chicago');
@@ -92,15 +93,17 @@ export function OrganisationSettings() {
               Logo
             </Text>
             <div className="flex items-center gap-4">
-              <div
-                className="flex size-16 items-center justify-center rounded-xl text-white font-display text-h2"
-                style={{ backgroundColor: primaryColor }}
-              >
-                {displayName.trim().charAt(0) || 'C'}
-              </div>
-              <Button variant="secondary" size="sm" leftIcon={ImagePlus}>
-                Upload a logo
-              </Button>
+              {logoUrl ? (
+                <img src={logoUrl} alt="" className="size-16 rounded-xl object-cover shrink-0" />
+              ) : (
+                <div
+                  className="flex size-16 items-center justify-center rounded-xl text-white font-display text-h2 shrink-0"
+                  style={{ backgroundColor: primaryColor }}
+                >
+                  {displayName.trim().charAt(0) || 'C'}
+                </div>
+              )}
+              <MediaPicker kind="image" label="Upload a logo" allowLibrary={false} onSelect={(asset) => setLogoUrl(asset.url)} />
             </div>
             <Text variant="caption" color="muted" className="block mt-2">
               A square image works best. Until one is uploaded, your initial stands in.

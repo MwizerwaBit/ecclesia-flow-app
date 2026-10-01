@@ -2,15 +2,19 @@
  * @file MyProfile.tsx
  * @description Member profile view allowing users to update their details and preferences.
  */
-import { useState } from 'react';
-import { User, Mail, Phone, MapPin, Settings, LogOut, Camera } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { User, Mail, Phone, MapPin, Settings, LogOut, Camera, Loader2 } from 'lucide-react';
 import { useAuthStore, useCurrentUser } from '@/hooks/useAuthStore';
+import { useMediaUpload } from '@/components/media/useMediaUpload';
 import { Button, Input, Card, Text, Avatar } from '@/components/ui';
 
 export function MyProfile() {
   const user = useCurrentUser();
   const { logout } = useAuthStore();
-  
+
+  const [photoUrl, setPhotoUrl] = useState(user?.photoUrl);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const avatarUpload = useMediaUpload('image', (asset) => setPhotoUrl(asset.url));
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({
     firstName: user?.firstName || '',
@@ -31,14 +35,27 @@ export function MyProfile() {
       {/* Header / Avatar */}
       <div className="bg-surface dark:bg-surface-dark px-4 pt-6 pb-8 text-center sticky top-0 z-10 shadow-sm border-b border-slate-100 dark:border-slate-800">
         <div className="relative inline-block mb-4">
-          <Avatar 
+          <Avatar
             name={`${formData.firstName} ${formData.lastName}`}
-            src={user?.photoUrl}
+            src={photoUrl}
             size="xl"
             className="w-24 h-24 border-4 border-white dark:border-slate-900 shadow-md"
           />
-          <button className="absolute bottom-0 right-0 bg-primary text-white p-2 rounded-full shadow-lg hover:scale-105 transition-transform">
-            <Camera size={16} />
+          <input
+            ref={avatarInputRef}
+            type="file"
+            accept={avatarUpload.accept}
+            className="hidden"
+            onChange={avatarUpload.onFileChange}
+          />
+          <button
+            type="button"
+            onClick={() => avatarInputRef.current?.click()}
+            disabled={avatarUpload.isUploading}
+            aria-label="Change profile photo"
+            className="absolute bottom-0 right-0 bg-primary text-white p-2 rounded-full shadow-lg hover:scale-105 transition-transform disabled:opacity-70"
+          >
+            {avatarUpload.isUploading ? <Loader2 size={16} className="animate-spin" /> : <Camera size={16} />}
           </button>
         </div>
         <Text variant="h2" as="h1">{formData.firstName} {formData.lastName}</Text>

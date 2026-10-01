@@ -8,7 +8,9 @@
  */
 import { useMemo, useState } from 'react';
 import { FileSpreadsheet, FileText, Image as ImageIcon, Search, Upload } from 'lucide-react';
-import { Badge, Button, Card, EmptyState, Fab, Input, SegmentedControl, Text } from '@/components/ui';
+import type { MediaAsset } from '@/types';
+import { MediaPicker } from '@/components/media/MediaPicker';
+import { Badge, Card, EmptyState, Input, SegmentedControl, Text } from '@/components/ui';
 import { formatRelative } from '@/lib/formatters';
 
 type FileKind = 'document' | 'photo' | 'export';
@@ -43,18 +45,32 @@ function formatSize(sizeKb: number): string {
   return sizeKb >= 1024 ? `${(sizeKb / 1024).toFixed(1)} MB` : `${sizeKb} KB`;
 }
 
+function fromMediaAsset(asset: MediaAsset): StoredFile {
+  return {
+    id: asset.id,
+    name: asset.name,
+    kind: asset.kind === 'image' ? 'photo' : 'document',
+    sizeKb: Math.round(asset.sizeBytes / 1024),
+    uploadedBy: asset.uploadedByName,
+    uploadedAt: asset.createdAt,
+  };
+}
+
 export function DocumentLibrary() {
   const [filter, setFilter] = useState<Filter>('all');
   const [query, setQuery] = useState('');
+  const [uploaded, setUploaded] = useState<StoredFile[]>([]);
+
+  const allFiles = useMemo(() => [...uploaded, ...MOCK_FILES], [uploaded]);
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return MOCK_FILES.filter((file) => (filter === 'all' ? true : file.kind === filter)).filter(
+    return allFiles.filter((file) => (filter === 'all' ? true : file.kind === filter)).filter(
       (file) => (q ? file.name.toLowerCase().includes(q) : true),
     ).sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime());
-  }, [filter, query]);
+  }, [allFiles, filter, query]);
 
-  const totalMb = MOCK_FILES.reduce((sum, f) => sum + f.sizeKb, 0) / 1024;
+  const totalMb = allFiles.reduce((sum, f) => sum + f.sizeKb, 0) / 1024;
 
   return (
     <div className="w-full max-w-5xl mx-auto px-4 py-6 animate-fade-in">
@@ -63,7 +79,7 @@ export function DocumentLibrary() {
           Documents
         </Text>
         <Text variant="body" color="muted">
-          {MOCK_FILES.length} files · {totalMb.toFixed(1)} MB used
+          {allFiles.length} files · {totalMb.toFixed(1)} MB used
         </Text>
       </header>
 
@@ -134,11 +150,12 @@ export function DocumentLibrary() {
         })}
       </Card>
 
-      <Button variant="secondary" fullWidth leftIcon={Upload} className="mt-5">
-        Upload a file
-      </Button>
-
-      <Fab icon={Upload} label="Upload" />
+      <MediaPicker
+        kind="document"
+        label="Upload a file"
+        className="mt-5 [&>div]:w-full [&_button:first-child]:flex-1"
+        onSelect={(asset) => setUploaded((prev) => [fromMediaAsset(asset), ...prev])}
+      />
     </div>
   );
 }

@@ -15,7 +15,6 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronUp,
-  ImagePlus,
   Minus,
   Plus,
   Save,
@@ -23,6 +22,7 @@ import {
 import type { CertificateTemplate } from '@/types';
 import { certificatesService } from '@/services/certificatesService';
 import { CertificateCanvas } from '@/components/certificates/CertificateCanvas';
+import { MediaPicker } from '@/components/media/MediaPicker';
 import { Button, Card, Input, Select, Text } from '@/components/ui';
 import { cn } from '@/lib/cn';
 
@@ -136,9 +136,11 @@ export function TemplateDesigner() {
         onSelectToken={setSelectedKey}
       />
 
-      <Button variant="secondary" fullWidth leftIcon={ImagePlus}>
-        Upload background artwork
-      </Button>
+      <MediaPicker
+        kind="image"
+        label="Upload background artwork"
+        onSelect={(asset) => setDraft({ ...draft, backgroundImageUrl: asset.url })}
+      />
 
       {/* Field editor */}
       {selected ? (
