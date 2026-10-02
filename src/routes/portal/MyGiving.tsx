@@ -4,8 +4,9 @@
  */
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Check, CreditCard, History } from 'lucide-react';
+import { Check, CreditCard, History, WifiOff } from 'lucide-react';
 import { useCurrentUser } from '@/hooks/useAuthStore';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { membersService } from '@/services/membersService';
 import { financeService } from '@/services/financeService';
 import { Button, Card, EmptyState, Skeleton, Text, Input, Select } from '@/components/ui';
@@ -15,6 +16,7 @@ const PRESET_AMOUNTS = [50, 100, 250, 500];
 
 export function MyGiving() {
   const user = useCurrentUser();
+  const isOnline = useOnlineStatus();
   const [amount, setAmount] = useState<string>('');
   const [fundId, setFundId] = useState<string>('');
   const [frequency, setFrequency] = useState<'one-time' | 'monthly'>('one-time');
@@ -46,7 +48,7 @@ export function MyGiving() {
 
   const handleDonate = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!amount || isNaN(Number(amount))) return;
+    if (!amount || isNaN(Number(amount)) || !isOnline) return;
     // No payment processor is wired up yet — this is the missing dependency
     // (identified, not invented), so the form confirms the intent rather than
     // pretending a charge went through.
@@ -152,13 +154,22 @@ export function MyGiving() {
               </div>
             </div>
 
-            <Button 
-              type="submit" 
-              variant="primary" 
-              size="lg" 
+            {!isOnline && (
+              <div className="flex items-center gap-2 rounded-lg bg-warning-light px-3 py-2">
+                <WifiOff size={16} className="text-warning shrink-0" aria-hidden />
+                <Text variant="body-sm" className="text-warning">
+                  Giving needs a connection — reconnect to submit.
+                </Text>
+              </div>
+            )}
+
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
               fullWidth
               rightIcon={CreditCard}
-              disabled={!amount || Number(amount) <= 0}
+              disabled={!amount || Number(amount) <= 0 || !isOnline}
               className="mt-4 shadow-md shadow-primary/20"
             >
               Give {amount ? formatCurrency(Number(amount)) : ''}
