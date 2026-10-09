@@ -82,4 +82,10 @@ export const commsService = {
     if (API_MODE === 'mock') return mockResponse(MOCK_TEMPLATES);
     return apiRequest<MessageTemplate[]>('/message-templates');
   },
+
+  /** Re-sends only to the addresses that bounced; everyone else is untouched. */
+  async retryFailedDeliveries(announcementId: string): Promise<{ retried: number }> {
+    if (API_MODE === 'mock') return mockResponse({ retried: 7 }, 600);
+    return apiRequest(`/announcements/${announcementId}/retry-failed`, { method: 'POST' });
+  },
 };

@@ -11,8 +11,9 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Navigate } from 'react-router-dom';
 import { Download, Mail, ShieldAlert } from 'lucide-react';
-import type { MemberStatus } from '@/types';
+import type { MemberListItem, MemberStatus } from '@/types';
 import { membersService } from '@/services/membersService';
+import { downloadCsv, type CsvValue } from '@/lib/download';
 import { useRole } from '@/hooks/useRole';
 import { Button, Card, Checkbox, SegmentedControl, Text } from '@/components/ui';
 
@@ -159,12 +160,32 @@ export function MemberCsvExport() {
       )}
 
       <div className="flex gap-2">
-        <Button variant="primary" fullWidth leftIcon={Download} disabled={selected.size === 0}>
-          Download CSV
+        <Button
+          variant="primary"
+          fullWidth
+          leftIcon={Download}
+          disabled={selected.size === 0 || rows.length === 0}
+          onClick={() =>
+            downloadCsv(
+              `directory-${scope}`,
+              FIELDS.filter((f) => selected.has(f.key)).map<
+                [string, (row: MemberListItem) => CsvValue]
+              >((f) => [f.label, (row) => (row as unknown as Record<string, CsvValue>)[f.key]]),
+              rows,
+            )
+          }
+        >
+          Download {rows.length} rows
         </Button>
-        <Button variant="secondary" leftIcon={Mail} disabled={selected.size === 0}>
-          Email it
-        </Button>
+        <a
+          href={`mailto:?subject=${encodeURIComponent('Directory export')}&body=${encodeURIComponent(
+            `A ${scope} directory export of ${rows.length} people is attached.`,
+          )}`}
+        >
+          <Button variant="secondary" leftIcon={Mail} disabled={selected.size === 0}>
+            Email it
+          </Button>
+        </a>
       </div>
     </div>
   );

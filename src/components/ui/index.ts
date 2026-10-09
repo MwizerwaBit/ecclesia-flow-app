@@ -17,6 +17,8 @@ export * from './EmptyState';
 export * from './SegmentedControl';
 export * from './FilterChips';
 export * from './StatTile';
+export * from './ContactActions';
+export * from './DataTable';
 export * from './Skeleton';
 export * from './MfaStepUpPrompt';
 export * from './OfflineBanner';

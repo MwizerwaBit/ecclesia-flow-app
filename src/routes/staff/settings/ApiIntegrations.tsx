@@ -33,6 +33,11 @@ const WEBHOOKS = [
 ];
 
 export function ApiIntegrations() {
+  /** Keys revoked in this sitting, so the row updates without a refetch. */
+  const [revokedKeys, setRevokedKeys] = useState<Set<string>>(new Set());
+  const [revoking, setRevoking] = useState<ApiKey | null>(null);
+  const [isEndpointOpen, setEndpointOpen] = useState(false);
+  const [endpointUrl, setEndpointUrl] = useState('');
   const { can } = useRole();
   const [isCreateOpen, setCreateOpen] = useState(false);
   const [keyName, setKeyName] = useState('');
@@ -88,7 +93,7 @@ export function ApiIntegrations() {
         </div>
 
         <Card padding="none" className="divide-y divide-slate-100 dark:divide-slate-800">
-          {KEYS.map((key) => (
+          {KEYS.filter((key) => !revokedKeys.has(key.id)).map((key) => (
             <div key={key.id} className="flex items-center gap-3 px-4 py-3.5">
               <div className="min-w-0 flex-1">
                 <Text variant="body" className="truncate">
@@ -107,7 +112,12 @@ export function ApiIntegrations() {
                 </Badge>
               )}
 
-              <Button variant="ghost" size="sm" aria-label={`Revoke ${key.name}`}>
+              <Button
+                variant="ghost"
+                size="sm"
+                aria-label={`Revoke ${key.name}`}
+                onClick={() => setRevoking(key)}
+              >
                 <Trash2 size={16} />
               </Button>
             </div>
@@ -122,7 +132,7 @@ export function ApiIntegrations() {
             <Webhook size={18} className="text-slate-400" aria-hidden />
             <Text variant="h2">Webhooks</Text>
           </div>
-          <Button variant="link" size="sm" leftIcon={Plus}>
+          <Button variant="link" size="sm" leftIcon={Plus} onClick={() => setEndpointOpen(true)}>
             Add endpoint
           </Button>
         </div>
@@ -165,6 +175,73 @@ export function ApiIntegrations() {
           Read the API documentation
         </Button>
       </Link>
+
+      {revoking && (
+        <BottomSheet
+          open
+          onClose={() => setRevoking(null)}
+          title={`Revoke ${revoking.name}`}
+          description="Anything using this key stops working immediately. This cannot be undone — a replacement gets a new key."
+          footer={
+            <Button
+              variant="destructive"
+              size="lg"
+              fullWidth
+              onClick={() => {
+                setRevokedKeys((prev) => new Set(prev).add(revoking.id));
+                setRevoking(null);
+              }}
+            >
+              Revoke key
+            </Button>
+          }
+        >
+          <code className="block rounded bg-slate-100 dark:bg-slate-800 px-3 py-2 text-body-sm">
+            {revoking.prefix}…
+          </code>
+          {!revoking.lastUsedAt && (
+            <Text variant="caption" color="muted" className="block mt-3">
+              This key has never been used, so revoking it is unlikely to break anything.
+            </Text>
+          )}
+        </BottomSheet>
+      )}
+
+      {isEndpointOpen && (
+        <BottomSheet
+          open
+          onClose={() => setEndpointOpen(false)}
+          title="Add a webhook endpoint"
+          description="We POST a signed JSON payload to this URL when the events you choose happen."
+          footer={
+            <Button
+              variant="primary"
+              size="lg"
+              fullWidth
+              disabled={!/^https:\/\/.+/.test(endpointUrl.trim())}
+              onClick={() => {
+                setEndpointOpen(false);
+                setEndpointUrl('');
+              }}
+            >
+              Add endpoint
+            </Button>
+          }
+        >
+          <Input
+            label="Endpoint URL"
+            autoFocus
+            placeholder="https://yourchurch.org/hooks/ecclesiaflow"
+            value={endpointUrl}
+            onChange={(e) => setEndpointUrl(e.target.value)}
+            error={
+              endpointUrl.trim() && !/^https:\/\/.+/.test(endpointUrl.trim())
+                ? 'Must be an https:// URL — we will not post member data over plain http.'
+                : undefined
+            }
+          />
+        </BottomSheet>
+      )}
 
       {isCreateOpen && (
         <BottomSheet

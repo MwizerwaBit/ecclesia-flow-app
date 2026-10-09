@@ -8,9 +8,16 @@ import { Lock, CheckCircle2 } from 'lucide-react';
 import { authService } from '@/services/authService';
 import { Button, Input, Card, Text } from '@/components/ui';
 
+/** The emailed link carries the token after `#`, so browsers never send it to
+ * a server, a log or a Referer header. `?token=` is still read for old links. */
+function readResetToken(searchParams: URLSearchParams): string | null {
+  const fromHash = window.location.hash.replace(/^#/, '');
+  return fromHash || searchParams.get('token');
+}
+
 export function ResetPassword() {
   const [searchParams] = useSearchParams();
-  const token = searchParams.get('token');
+  const token = readResetToken(searchParams);
 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');

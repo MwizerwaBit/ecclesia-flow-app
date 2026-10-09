@@ -136,6 +136,8 @@ export const PERMISSION_CATALOGUE: Array<{
       { key: 'members:create', label: 'Add members and visitors' },
       { key: 'members:update', label: 'Edit member records' },
       { key: 'members:export', label: 'Export the directory', sensitive: true },
+      { key: 'groups:read', label: 'View groups and their rosters' },
+      { key: 'groups:manage', label: 'Create groups and manage who is in them' },
       { key: 'pastoral_notes:read', label: 'Read pastoral notes', sensitive: true },
       { key: 'pastoral_notes:write', label: 'Write pastoral notes', sensitive: true },
     ],
@@ -155,6 +157,7 @@ export const PERMISSION_CATALOGUE: Array<{
       { key: 'events:read', label: 'View gatherings' },
       { key: 'events:create', label: 'Create gatherings' },
       { key: 'events:update', label: 'Edit gatherings' },
+      { key: 'events:review', label: 'Review gatherings before they are published' },
     ],
   },
   {
@@ -183,6 +186,10 @@ export const PERMISSION_CATALOGUE: Array<{
       { key: 'team:invite', label: 'Invite team members', sensitive: true },
       { key: 'roles:create', label: 'Create and edit roles', sensitive: true },
       { key: 'org:settings', label: 'Change organisation settings', sensitive: true },
+      { key: 'billing:manage', label: 'Manage the subscription and payments', sensitive: true },
+      { key: 'org:documents', label: 'Upload official registration documents', sensitive: true },
+      { key: 'leadership:manage', label: 'Shape the leadership structure', sensitive: true },
+      { key: 'admins:manage', label: 'Appoint and remove administrators', sensitive: true },
     ],
   },
 ];

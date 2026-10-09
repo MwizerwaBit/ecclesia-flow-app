@@ -3,7 +3,7 @@
  * @description Main authentication entry point.
  */
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, LogIn } from 'lucide-react';
 import { useAuthStore } from '@/hooks/useAuthStore';
 import { Button, Input, Card, Text } from '@/components/ui';
@@ -12,15 +12,17 @@ export function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { login, isLoading, error, clearError } = useAuthStore();
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     clearError();
     
     try {
-      await login({ email, password });
-      // The router's PublicLayout will auto-redirect based on role
-      // But we can also force navigate if needed
+      const outcome = await login({ email, password });
+      // Signed in: PublicLayout redirects by role. Two-step sign-in on: the
+      // password was right, the code screen finishes the job.
+      if (outcome === 'mfa') navigate('/mfa/challenge');
     } catch {
       // Error state is surfaced by the auth store
     }

@@ -58,8 +58,11 @@ export function InviteStaff() {
         unitScope,
         message: message.trim() || undefined,
       }),
-    onSuccess: () => navigate('/staff/team'),
+    // With an email service the link is mailed and we just go back to the team.
+    // Without one (development) the API hands the link back to pass on by hand.
+    onSuccess: (member) => (member.inviteUrl ? setInviteUrl(member.inviteUrl) : navigate('/staff/team')),
   });
+  const [inviteUrl, setInviteUrl] = useState<string | null>(null);
 
   if (!can('team:invite')) {
     return <Navigate to="/403" replace />;
@@ -176,6 +179,30 @@ export function InviteStaff() {
           className="w-full rounded-lg border border-slate-200 dark:border-slate-700 bg-surface dark:bg-surface-dark px-3 py-2.5 text-body text-slate-900 dark:text-slate-100 placeholder:text-slate-400 outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
         />
       </div>
+
+      {invite.isError && (
+        <div role="alert" className="p-4 bg-danger-light text-danger rounded-lg text-body-sm font-medium border border-danger/20">
+          {invite.error instanceof Error ? invite.error.message : 'The invitation could not be sent.'}
+        </div>
+      )}
+
+      {inviteUrl && (
+        <div role="status" className="p-4 rounded-lg border border-primary/30 bg-primary-light/40 space-y-2">
+          <Text variant="body-sm" className="font-semibold">
+            Invitation created. No email service is connected yet, so send them this link yourself. It works once and expires in 3 days.
+          </Text>
+          <input
+            readOnly
+            aria-label="Invitation link"
+            value={inviteUrl}
+            onFocus={(e) => e.currentTarget.select()}
+            className="w-full h-10 rounded-lg border border-slate-200 dark:border-slate-700 bg-surface dark:bg-surface-dark px-3 text-body-sm"
+          />
+          <Button variant="secondary" size="sm" onClick={() => void navigator.clipboard?.writeText(inviteUrl)}>
+            Copy link
+          </Button>
+        </div>
+      )}
 
       <Button
         variant="primary"

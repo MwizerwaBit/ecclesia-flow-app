@@ -88,9 +88,11 @@ export function EventsList() {
           }
           action={
             !query ? (
-              <Button variant="primary" leftIcon={Plus}>
-                Create a gathering
-              </Button>
+              <Link to="/staff/events/new">
+                <Button variant="primary" leftIcon={Plus}>
+                  Create a gathering
+                </Button>
+              </Link>
             ) : undefined
           }
         />

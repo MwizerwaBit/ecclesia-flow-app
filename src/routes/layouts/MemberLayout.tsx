@@ -3,7 +3,7 @@
  * @description Layout for congregant (Member) users. Mobile-optimized with Tab Bar.
  */
 import { Outlet, Navigate, useLocation } from 'react-router-dom';
-import { Home, Heart, Calendar, Bell } from 'lucide-react';
+import { Home, Heart, Calendar, Bell, UsersRound } from 'lucide-react';
 import { useRole } from '@/hooks/useRole';
 import { BottomTabBar, TopHeader } from '@/components/layout';
 
@@ -11,6 +11,7 @@ const MOBILE_TABS = [
   { label: 'Home', href: '/portal', icon: Home },
   { label: 'Giving', href: '/portal/giving', icon: Heart },
   { label: 'Events', href: '/portal/events', icon: Calendar },
+  { label: 'Groups', href: '/portal/groups', icon: UsersRound },
   { label: 'Alerts', href: '/portal/notifications', icon: Bell, badgeCount: 2 },
 ];
 

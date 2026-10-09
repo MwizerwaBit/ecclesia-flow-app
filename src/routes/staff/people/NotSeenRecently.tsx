@@ -8,9 +8,9 @@
  */
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { HeartHandshake, Mail, MessageCircle, Phone } from 'lucide-react';
+import { HeartHandshake } from 'lucide-react';
 import { membersService } from '@/services/membersService';
-import { Avatar, Badge, Button, Card, EmptyState, Text } from '@/components/ui';
+import { Avatar, Badge, Card, ContactActions, EmptyState, Text } from '@/components/ui';
 import { formatDate } from '@/lib/formatters';
 
 /** Absence in weeks, rounded down — how staff actually talk about it. */
@@ -85,17 +85,12 @@ export function NotSeenRecently() {
                 )}
               </div>
 
-              <div className="flex gap-1 border-t border-slate-100 dark:border-slate-800 px-3 py-2">
-                <Button variant="ghost" size="sm" leftIcon={Phone} className="flex-1">
-                  Call
-                </Button>
-                <Button variant="ghost" size="sm" leftIcon={MessageCircle} className="flex-1">
-                  WhatsApp
-                </Button>
-                <Button variant="ghost" size="sm" leftIcon={Mail} className="flex-1">
-                  Email
-                </Button>
-              </div>
+              <ContactActions
+                name={`${member.firstName} ${member.lastName}`}
+                phone={member.phone}
+                email={member.email}
+                className="border-t border-slate-100 dark:border-slate-800 px-3 py-2"
+              />
             </Card>
           );
         })}

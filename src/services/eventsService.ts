@@ -11,8 +11,10 @@ import type {
   ChurchEvent,
   EventListItem,
   HeadcountEntry,
+  PublicEvent,
+  ReviewerOption,
 } from '@/types';
-import { mockResponse, API_MODE, apiRequest } from './adapter';
+import { mockResponse, API_MODE, apiRequest, requireApi } from './adapter';
 import { MOCK_EVENTS, MOCK_EVENT_DETAIL, MOCK_ATTENDANCE_SUMMARY } from '@/mocks/events.mock';
 
 export interface AttendanceMarkInput {
@@ -148,5 +150,59 @@ export const eventsService = {
       method: 'POST',
       body: JSON.stringify(entry),
     });
+  },
+
+  // ── Review workflow (API only) ────────────────────────────────────────
+
+  /** Team members who may review — never includes you. */
+  async reviewerOptions(): Promise<ReviewerOption[]> {
+    requireApi('Event review');
+    return apiRequest<ReviewerOption[]>('/events/reviewer-options');
+  },
+
+  async submitForReview(eventId: string, reviewerUserIds: string[]): Promise<ChurchEvent> {
+    requireApi('Event review');
+    return apiRequest<ChurchEvent>(`/events/${eventId}/submit`, {
+      method: 'POST',
+      body: JSON.stringify({ reviewerUserIds }),
+    });
+  },
+
+  async review(eventId: string, decision: 'approved' | 'changes_requested', comment?: string): Promise<ChurchEvent> {
+    requireApi('Event review');
+    return apiRequest<ChurchEvent>(`/events/${eventId}/review`, {
+      method: 'POST',
+      body: JSON.stringify({ decision, comment: comment || undefined }),
+    });
+  },
+
+  /** For reviewers: publish without a separate review. */
+  async publish(eventId: string): Promise<ChurchEvent> {
+    requireApi('Publishing');
+    return apiRequest<ChurchEvent>(`/events/${eventId}/publish`, { method: 'POST' });
+  },
+
+  async cancel(eventId: string): Promise<ChurchEvent> {
+    requireApi('Canceling');
+    return apiRequest<ChurchEvent>(`/events/${eventId}/cancel`, { method: 'POST' });
+  },
+
+  /** Gatherings waiting for my decision. */
+  async reviewQueue(): Promise<EventListItem[]> {
+    requireApi('Event review');
+    return apiRequest<EventListItem[]>('/events/review-queue');
+  },
+
+  async occurrences(eventId: string, from: string, to: string): Promise<string[]> {
+    requireApi('Repeating events');
+    return apiRequest<string[]>(
+      `/events/${eventId}/occurrences?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+    );
+  },
+
+  /** A church's published public gatherings — no sign-in. */
+  async publicEvents(slug: string): Promise<PublicEvent[]> {
+    requireApi('Public events');
+    return apiRequest<PublicEvent[]>(`/churches/${encodeURIComponent(slug)}/events`, { skipAuth: true });
   },
 };

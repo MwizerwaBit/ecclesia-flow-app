@@ -8,6 +8,12 @@
  * reviews it before it runs.
  */
 import { useState } from 'react';
+import { useMutation } from '@tanstack/react-query';
+import { membersService } from '@/services/membersService';
+import { financeService } from '@/services/financeService';
+import { eventsService } from '@/services/eventsService';
+import { commsService } from '@/services/commsService';
+import { downloadJson } from '@/lib/download';
 import { Navigate } from 'react-router-dom';
 import { Check, Database, Download, FileWarning, ShieldAlert, Trash2 } from 'lucide-react';
 import { useRole } from '@/hooks/useRole';
@@ -30,6 +36,25 @@ const RETENTION_OPTIONS = [
 ];
 
 export function DataPrivacy() {
+  // Everything this organisation owns, in one open-format archive. Gathered
+  // client-side from the same endpoints the app already uses, so it works
+  // whether or not the subscription is current — which is the promise the
+  // copy below makes.
+  const exportAll = useMutation({
+    mutationFn: async () => {
+      const [members, funds, batches, pledges, events, announcements, units] = await Promise.all([
+        membersService.list(),
+        financeService.listFunds(),
+        financeService.listBatches(),
+        financeService.listPledges(),
+        eventsService.list(),
+        commsService.listAnnouncements(),
+        commsService.listUnits(),
+      ]);
+      return { exportedAt: new Date().toISOString(), members, funds, batches, pledges, events, announcements, units };
+    },
+    onSuccess: (archive) => downloadJson('ecclesiaflow-export', archive),
+  });
   const { can } = useRole();
   const [retention, setRetention] = useState('0');
   const [isErasureOpen, setErasureOpen] = useState(false);
@@ -76,7 +101,13 @@ export function DataPrivacy() {
             ))}
           </div>
 
-          <Button variant="primary" fullWidth leftIcon={Download}>
+          <Button
+            variant="primary"
+            fullWidth
+            leftIcon={Download}
+            isLoading={exportAll.isPending}
+            onClick={() => exportAll.mutate()}
+          >
             Export all data
           </Button>
           <Text variant="caption" color="muted" className="block mt-2 text-center">

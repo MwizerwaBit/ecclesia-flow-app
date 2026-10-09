@@ -3,17 +3,17 @@
  * @description MFA Verification screen after successful primary authentication.
  */
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { ShieldCheck, ArrowRight } from 'lucide-react';
-import { authService } from '@/services/authService';
-import { useAuthStore } from '@/hooks/useAuthStore';
+import { API_MODE } from '@/services/adapter';
+import { authErrorMessage, useAuthStore } from '@/hooks/useAuthStore';
 import { Button, Input, Card, Text } from '@/components/ui';
 
 export function MfaChallenge() {
   const [code, setCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { setSession } = useAuthStore();
+  const { completeMfa, mfaChallengeToken } = useAuthStore();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -22,15 +22,18 @@ export function MfaChallenge() {
     setError(null);
     
     try {
-      const session = await authService.verifyMfa(code);
-      setSession(session);
-      navigate('/staff/dashboard', { replace: true });
+      await completeMfa(code);
+      // PublicLayout sends the now-signed-in user to their own home.
+      navigate('/login', { replace: true });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Invalid verification code');
+      setError(authErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
   };
+
+  // The code only means something straight after a correct password.
+  if (API_MODE === 'rest' && !mfaChallengeToken) return <Navigate to="/login" replace />;
 
   return (
     <div className="w-full animate-fade-in px-4">
@@ -40,7 +43,7 @@ export function MfaChallenge() {
         </div>
         <Text variant="h1" className="mb-2">Two-Factor Authentication</Text>
         <Text variant="body-lg" color="muted">
-          Enter the 6-digit code from your authenticator app.
+          Enter the 6-digit code from your authenticator app, or one of your backup codes.
         </Text>
       </div>
 
@@ -55,12 +58,12 @@ export function MfaChallenge() {
           <Input
             label="Verification Code"
             type="text"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            maxLength={6}
+            inputMode="text"
+            maxLength={10}
             placeholder="000000"
             value={code}
-            onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
+            // 6-digit app code, or a 10-character backup code
+            onChange={(e) => setCode(e.target.value.replace(/[^0-9a-fA-F]/g, '').toLowerCase())}
             required
             autoComplete="one-time-code"
             className="text-center text-h3 tracking-widest"
@@ -73,7 +76,7 @@ export function MfaChallenge() {
             fullWidth 
             isLoading={isLoading}
             rightIcon={ArrowRight}
-            disabled={code.length !== 6}
+            disabled={code.length !== 6 && code.length !== 10}
           >
             Verify
           </Button>

@@ -10,6 +10,7 @@ import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Download, TrendingUp } from 'lucide-react';
 import { financeService } from '@/services/financeService';
+import { downloadCsv } from '@/lib/download';
 import { Button, Card, SegmentedControl, StatTile, Text } from '@/components/ui';
 import { formatCurrency, formatCurrencyCompact, formatPercent } from '@/lib/formatters';
 
@@ -182,7 +183,21 @@ export function GivingReports() {
         </Card>
       )}
 
-      <Button variant="secondary" fullWidth leftIcon={Download}>
+      <Button
+        variant="secondary"
+        fullWidth
+        leftIcon={Download}
+        onClick={() =>
+          downloadCsv(
+            `giving-${period}`,
+            [
+              ['Period', (r) => r.label],
+              ['Amount', (r) => r.amount],
+            ],
+            trend,
+          )
+        }
+      >
         Export this report
       </Button>
     </div>

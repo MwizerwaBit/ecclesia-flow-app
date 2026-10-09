@@ -11,6 +11,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Check, Download, UserX } from 'lucide-react';
 import { eventsService } from '@/services/eventsService';
+import { downloadCsv } from '@/lib/download';
 import { Avatar, Button, Card, SegmentedControl, StatTile, Text } from '@/components/ui';
 import { formatDate, formatPercent } from '@/lib/formatters';
 
@@ -114,7 +115,24 @@ export function AttendanceReport() {
         </Link>
       )}
 
-      <Button variant="ghost" fullWidth leftIcon={Download}>
+      <Button
+        variant="ghost"
+        fullWidth
+        leftIcon={Download}
+        onClick={() =>
+          downloadCsv(
+            `attendance-${activeEvent.title.toLowerCase().replace(/\s+/g, '-')}`,
+            [
+              ['Name', (r) => r.name],
+              ['Status', (r) => r.status],
+            ],
+            [
+              ...summary.presentMembers.map((m) => ({ name: m.name, status: 'present' })),
+              ...summary.absentMembers.map((m) => ({ name: m.name, status: 'absent' })),
+            ],
+          )
+        }
+      >
         Export this register
       </Button>
     </div>

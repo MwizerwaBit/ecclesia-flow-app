@@ -11,6 +11,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useParams } from 'react-router-dom';
 import { BadgeCheck, Printer, ShieldAlert, ShieldX } from 'lucide-react';
 import { certificatesService } from '@/services/certificatesService';
+import { printPage } from '@/lib/download';
 import { Button, Card, Text } from '@/components/ui';
 import { formatDate } from '@/lib/formatters';
 
@@ -133,7 +134,7 @@ export function CertificateVerification() {
         )}
       </Card>
 
-      <Button variant="secondary" fullWidth leftIcon={Printer} className="mt-5">
+      <Button variant="secondary" fullWidth leftIcon={Printer} className="mt-5" onClick={printPage}>
         Print this confirmation
       </Button>
 

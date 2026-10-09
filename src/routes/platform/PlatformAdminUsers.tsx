@@ -7,7 +7,7 @@
  * rather than advised, so an admin without it is shown as a defect to fix.
  */
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Eye, Mail, ShieldAlert, ShieldCheck, UserPlus } from 'lucide-react';
 import { platformService } from '@/services/platformService';
 import { Avatar, Badge, BottomSheet, Button, Card, EmptyState, Input, Select, Text } from '@/components/ui';
@@ -26,8 +26,21 @@ const LEVELS = [
   },
 ];
 
+/** The shape listPlatformAdmins returns, so the confirm sheet can hold one. */
+type PlatformAdmin = Awaited<ReturnType<typeof platformService.listPlatformAdmins>>[number];
+
 export function PlatformAdminUsers() {
+  const queryClient = useQueryClient();
+  const [revoking, setRevoking] = useState<PlatformAdmin | null>(null);
   const [isInviteOpen, setInviteOpen] = useState(false);
+
+  const revoke = useMutation({
+    mutationFn: (adminId: string) => platformService.revokePlatformAdmin(adminId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['platform', 'admins'] });
+      setRevoking(null);
+    },
+  });
   const [email, setEmail] = useState('');
   const [level, setLevel] = useState('PLATFORM_SUPPORT');
 
@@ -129,7 +142,7 @@ export function PlatformAdminUsers() {
                 {admin.impersonationCount} impersonation
                 {admin.impersonationCount === 1 ? '' : 's'}
               </span>
-              <Button variant="ghost" size="sm">
+              <Button variant="ghost" size="sm" onClick={() => setRevoking(admin)}>
                 Revoke access
               </Button>
             </div>
@@ -146,6 +159,41 @@ export function PlatformAdminUsers() {
       >
         Invite a platform admin
       </Button>
+
+      {revoking && (
+        <BottomSheet
+          open
+          onClose={() => setRevoking(null)}
+          title={`Revoke ${revoking.name}`}
+          description="They lose access to every organisation on the platform immediately, and any active impersonation session ends."
+          footer={
+            <Button
+              variant="destructive"
+              size="lg"
+              fullWidth
+              isLoading={revoke.isPending}
+              onClick={() => revoke.mutate(revoking.id)}
+            >
+              Revoke access
+            </Button>
+          }
+        >
+          <div className="space-y-3">
+            <Text variant="body-sm" color="muted">
+              {revoking.email} · {revoking.level === 'PLATFORM_ADMIN' ? 'Full admin' : 'Support'}
+            </Text>
+            {revoking.impersonationCount > 0 && (
+              <div className="flex items-start gap-2 rounded-lg bg-warning-light px-3 py-2.5">
+                <ShieldAlert size={16} className="text-warning shrink-0 mt-0.5" aria-hidden />
+                <Text variant="caption" className="text-warning">
+                  They have opened {revoking.impersonationCount} impersonation sessions. Those
+                  remain in the platform audit log after revocation.
+                </Text>
+              </div>
+            )}
+          </div>
+        </BottomSheet>
+      )}
 
       {isInviteOpen && (
         <BottomSheet

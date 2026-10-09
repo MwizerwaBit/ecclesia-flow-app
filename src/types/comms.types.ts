@@ -116,6 +116,8 @@ export interface TeamMember {
   roleColor?: string;
   unitScope?: string; // Unit ID or "all"
   unitScopeName?: string;
+  /** Development only — the link that would be emailed (the API omits it in production). */
+  inviteUrl?: string;
   mfaEnabled: boolean;
   lastActiveAt?: string;
   invitedAt: string;

@@ -7,6 +7,7 @@ import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client
 import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
 import { RouterProvider } from 'react-router-dom';
 import { router } from '@/routes';
+import { useAuthStore } from '@/hooks/useAuthStore';
 import { DevRoleSwitcher } from '@/components/dev/DevRoleSwitcher';
 import { OfflineBanner } from '@/components/ui';
 
@@ -36,6 +37,20 @@ const persister = createSyncStoragePersister({
   key: 'ecclesiaflow-query-cache',
 });
 
+// The cache is keyed by screen, not by church, so one church's directory must
+// never be shown to the next person who signs in. Dropping it whenever the
+// signed-in user or church changes keeps tenants apart on a shared device.
+useAuthStore.subscribe((state, previous) => {
+  const now = state.session?.user;
+  const before = previous.session?.user;
+  if (now?.id !== before?.id || now?.tenantId !== before?.tenantId) queryClient.clear();
+});
+
+function cacheOwner(): string {
+  const user = useAuthStore.getState().session?.user;
+  return user ? `${user.id}:${user.tenantId}` : 'signed-out';
+}
+
 if (import.meta.env.DEV && typeof window !== 'undefined') {
   // Dev-only inspection hook — lets the browser console (or a Puppeteer
   // script) check `window.__queryClient.getMutationCache().getAll()` to see
@@ -47,7 +62,9 @@ export function App() {
   return (
     <PersistQueryClientProvider
       client={queryClient}
-      persistOptions={{ persister, maxAge: 24 * 60 * 60 * 1000 }}
+      // The buster ties a persisted cache to the user and church that wrote it:
+      // restoring one written under a different session discards it instead.
+      persistOptions={{ persister, maxAge: 24 * 60 * 60 * 1000, buster: cacheOwner() }}
     >
       <OfflineBanner />
       <RouterProvider router={router} />

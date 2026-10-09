@@ -9,12 +9,19 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
 import { AlertTriangle, Mail, MailOpen, Pin, RefreshCw, Send, Smartphone } from 'lucide-react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { commsService } from '@/services/commsService';
 import { Badge, Button, Card, StatTile, Text } from '@/components/ui';
 import { formatDate, formatDateTime, formatPercent } from '@/lib/formatters';
 
 export function AnnouncementDetail() {
   const { id = '' } = useParams();
+  const queryClient = useQueryClient();
+
+  const retry = useMutation({
+    mutationFn: () => commsService.retryFailedDeliveries(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['announcement', id] }),
+  });
 
   const { data: announcement, isLoading } = useQuery({
     queryKey: ['announcement', id],
@@ -112,7 +119,14 @@ export function AnnouncementDetail() {
                     Usually an address that has changed. Retrying will not affect anyone who
                     already received it.
                   </Text>
-                  <Button variant="secondary" size="sm" className="mt-3" leftIcon={RefreshCw}>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    className="mt-3"
+                    leftIcon={RefreshCw}
+                    isLoading={retry.isPending}
+                    onClick={() => retry.mutate()}
+                  >
                     Retry the {failed} that failed
                   </Button>
                 </div>

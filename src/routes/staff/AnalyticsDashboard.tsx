@@ -10,6 +10,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Navigate } from 'react-router-dom';
 import { Download, HeartHandshake, TrendingUp, UserPlus, Users } from 'lucide-react';
 import { financeService } from '@/services/financeService';
+import { downloadCsv } from '@/lib/download';
 import { useRole } from '@/hooks/useRole';
 import { Card, Button, StatTile, Text } from '@/components/ui';
 import { formatCurrencyCompact, formatPercent } from '@/lib/formatters';
@@ -217,7 +218,27 @@ export function AnalyticsDashboard() {
         </div>
       </Card>
 
-      <Button variant="secondary" fullWidth leftIcon={Download}>
+      <Button
+        variant="secondary"
+        fullWidth
+        leftIcon={Download}
+        onClick={() =>
+          downloadCsv(
+            'analytics',
+            [
+              ['Series', (r) => r.series],
+              ['Period', (r) => r.period],
+              ['Value', (r) => r.value],
+            ],
+            [
+              ...ATTENDANCE_12W.map((v, i) => ({ series: 'Attendance', period: `Week ${i + 1}`, value: v })),
+              ...GIVING_12W.map((v, i) => ({ series: 'Weekly giving (thousands)', period: `Week ${i + 1}`, value: v })),
+              ...MEMBER_GROWTH.map((p) => ({ series: 'Members', period: p.label, value: p.count })),
+              ...VISITOR_FUNNEL.map((p) => ({ series: 'Visitor funnel', period: p.stage, value: p.count })),
+            ],
+          )
+        }
+      >
         Export these reports
       </Button>
     </div>

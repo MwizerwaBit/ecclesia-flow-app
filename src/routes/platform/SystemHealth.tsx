@@ -6,7 +6,8 @@
  * observability tooling: enough to answer "is something wrong right now", with
  * links out to the tools that answer "why".
  */
-import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Activity,
   AlertTriangle,
@@ -27,6 +28,18 @@ const EXTERNAL_TOOLS = [
 ];
 
 export function SystemHealth() {
+  const queryClient = useQueryClient();
+  /** IPs blocked in this sitting, so the row can confirm without a refetch. */
+  const [blocked, setBlocked] = useState<Set<string>>(new Set());
+
+  const blockIp = useMutation({
+    mutationFn: (ip: string) => platformService.blockIp(ip),
+    onSuccess: (_result, ip) => {
+      setBlocked((prev) => new Set(prev).add(ip));
+      void queryClient.invalidateQueries({ queryKey: ['platform', 'system-health'] });
+    },
+  });
+
   const { data: health, isLoading } = useQuery({
     queryKey: ['platform', 'system-health'],
     queryFn: () => platformService.getSystemHealth(),
@@ -149,9 +162,20 @@ export function SystemHealth() {
                   {violation.count} hits · last {formatRelative(violation.lastSeen)}
                 </Text>
               </div>
-              <Button variant="ghost" size="sm">
-                Block
-              </Button>
+              {blocked.has(violation.ip) ? (
+                <Badge variant="danger" size="sm" className="shrink-0">
+                  Blocked
+                </Badge>
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  isLoading={blockIp.isPending && blockIp.variables === violation.ip}
+                  onClick={() => blockIp.mutate(violation.ip)}
+                >
+                  Block
+                </Button>
+              )}
             </div>
           ))}
         </Card>
@@ -164,9 +188,11 @@ export function SystemHealth() {
         </Text>
         <div className="grid grid-cols-2 gap-2">
           {EXTERNAL_TOOLS.map((tool) => (
-            <Button key={tool.label} variant="secondary" rightIcon={ExternalLink}>
-              {tool.label}
-            </Button>
+            <a key={tool.label} href={tool.href} target="_blank" rel="noreferrer">
+              <Button variant="secondary" rightIcon={ExternalLink} fullWidth>
+                {tool.label}
+              </Button>
+            </a>
           ))}
         </div>
       </div>

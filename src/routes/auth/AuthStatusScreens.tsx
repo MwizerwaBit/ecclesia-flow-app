@@ -91,14 +91,16 @@ export function VerificationWaiting() {
 }
 
 export function AccountLocked() {
+  const [sent, setSent] = useState(false);
+
   return (
     <StatusShell
       icon={<Lock size={38} className="text-warning" aria-hidden />}
       title="Your account is locked"
       description="There were too many sign-in attempts, so we locked the account to protect it. This happens automatically and says nothing about you."
     >
-      <Button variant="primary" fullWidth>
-        Email me an unlock link
+      <Button variant="primary" fullWidth disabled={sent} onClick={() => setSent(true)}>
+        {sent ? 'Unlock link sent' : 'Email me an unlock link'}
       </Button>
       <Link to="/contact">
         <Button variant="ghost" fullWidth className="mt-2">

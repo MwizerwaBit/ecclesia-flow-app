@@ -36,6 +36,13 @@ export function FeatureFlagOverrides() {
     enabled: Boolean(id),
   });
 
+  // Reverting is the same write as applying — with the tier's own value.
+  const revert = useMutation({
+    mutationFn: (flag: FeatureFlag) =>
+      platformService.setFeatureFlag(id, flag.code, flag.tierDefault, 'Reverted to tier default'),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['platform', 'flags', id] }),
+  });
+
   const apply = useMutation({
     mutationFn: () =>
       platformService.setFeatureFlag(id, pending!.flag.code, pending!.next, note.trim()),
@@ -137,7 +144,14 @@ export function FeatureFlagOverrides() {
                     Expires {formatDate(flag.overrideExpiresAt)}
                   </Text>
                 )}
-                <Button variant="link" size="sm" leftIcon={RotateCcw} className="mt-1">
+                <Button
+                  variant="link"
+                  size="sm"
+                  leftIcon={RotateCcw}
+                  className="mt-1"
+                  isLoading={revert.isPending && revert.variables?.code === flag.code}
+                  onClick={() => revert.mutate(flag)}
+                >
                   Revert to tier default
                 </Button>
               </div>

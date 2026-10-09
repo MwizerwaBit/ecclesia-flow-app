@@ -4,87 +4,15 @@
  */
 import { useState } from 'react';
 import { Outlet, Navigate, useLocation } from 'react-router-dom';
-import {
-  Award,
-  Banknote,
-  BarChart3,
-  CalendarCheck,
-  CalendarDays,
-  FolderOpen,
-  HeartHandshake,
-  Home,
-  Megaphone,
-  Network,
-  Settings,
-  Target,
-  UserMinus,
-  UserPlus,
-  Users,
-  Wallet,
-} from 'lucide-react';
+// The nav's icons now come from the module registry; these are only the ones
+// this layout uses directly.
+import { Banknote, CalendarDays, Home, UserPlus, Users } from 'lucide-react';
 import { useRole } from '@/hooks/useRole';
 import { useCurrentUser } from '@/hooks/useAuthStore';
-import { SideNav, BottomTabBar, NavDrawer, TopBar, TopHeader, type NavSection } from '@/components/layout';
+import { useModules } from '@/modules/useModules';
+import { buildStaffNav } from '@/modules/nav';
+import { SideNav, BottomTabBar, NavDrawer, TopBar, TopHeader } from '@/components/layout';
 
-const SIDEBAR_SECTIONS: NavSection[] = [
-  {
-    items: [{ label: 'Dashboard', href: '/staff/dashboard', icon: Home }],
-  },
-  {
-    title: 'People',
-    items: [
-      { label: 'Directory', href: '/staff/members', icon: Users },
-      { label: 'Follow-ups', href: '/staff/members/visitor-followup', icon: HeartHandshake },
-      { label: 'Not seen recently', href: '/staff/members/not-seen', icon: UserMinus },
-    ],
-  },
-  {
-    title: 'Gatherings',
-    items: [
-      { label: 'Events', href: '/staff/events', icon: CalendarDays },
-      { label: 'Take attendance', href: '/staff/attendance/take', icon: CalendarCheck },
-      { label: 'Attendance report', href: '/staff/attendance/report', icon: BarChart3 },
-    ],
-  },
-  {
-    title: 'Giving',
-    items: [
-      { label: 'Overview', href: '/staff/finance', icon: Banknote },
-      { label: 'Offering batches', href: '/staff/finance/batches', icon: Wallet },
-      { label: 'Funds', href: '/staff/finance/funds', icon: Banknote },
-      { label: 'Pledges', href: '/staff/finance/pledges', icon: Target },
-      { label: 'Reports', href: '/staff/finance/reports', icon: BarChart3 },
-      { label: 'Statements', href: '/staff/finance/statements', icon: FolderOpen },
-    ],
-  },
-  {
-    title: 'Operations',
-    items: [
-      { label: 'Announcements', href: '/staff/comms/announcements', icon: Megaphone },
-      { label: 'Certificates', href: '/staff/certificates', icon: Award },
-      { label: 'Documents', href: '/staff/documents', icon: FolderOpen },
-      { label: 'Structure', href: '/staff/hierarchy', icon: Network, permission: 'hierarchy:read' },
-      { label: 'Analytics', href: '/staff/analytics', icon: BarChart3, permission: 'analytics:read' },
-    ],
-  },
-  {
-    title: 'Administration',
-    items: [
-      { label: 'Team & roles', href: '/staff/team', icon: Users, permission: 'team:read' },
-      { label: 'Settings', href: '/staff/settings', icon: Settings },
-    ],
-  },
-];
-
-/** Drops items (and whole sections, if they end up empty) the current session can't reach. */
-function visibleSections(sections: typeof SIDEBAR_SECTIONS, can: (permission: string) => boolean) {
-  return sections
-    .map((section) => ({
-      ...section,
-      items: section.items.filter((item) => !item.permission || can(item.permission)),
-    }))
-    .filter((section) => section.items.length > 0);
-}
 
 /** Ordered longest-first; the first matching prefix names the screen. */
 const SECTION_TITLES: Array<[string, string]> = [
@@ -93,6 +21,12 @@ const SECTION_TITLES: Array<[string, string]> = [
   ['/staff/members/export', 'Export directory'],
   ['/staff/members/add', 'Add a person'],
   ['/staff/members', 'Directory'],
+  ['/staff/groups/new', 'New group'],
+  ['/staff/groups/roles', 'Group roles'],
+  ['/staff/events/reviews', 'Reviews'],
+  ['/staff/team/structure', 'Leadership structure'],
+  ['/staff/groups', 'Groups'],
+  ['/staff/households', 'Household'],
   ['/staff/attendance/headcount', 'Headcount'],
   ['/staff/attendance/report', 'Attendance report'],
   ['/staff/attendance', 'Attendance'],
@@ -123,6 +57,7 @@ const MOBILE_TABS = [
 export function StaffLayout() {
   const { isStaff, isAuthenticated, isBoard, can } = useRole();
   const user = useCurrentUser();
+  const { modules: allModules } = useModules();
   const location = useLocation();
   const [isMenuOpen, setMenuOpen] = useState(false);
 
@@ -135,7 +70,10 @@ export function StaffLayout() {
     return <Navigate to="/403" replace />;
   }
 
-  const sections = visibleSections(SIDEBAR_SECTIONS, can);
+  // The sidebar is derived, not declared: a module the church has not
+  // subscribed to contributes nothing, and neither does one this role cannot
+  // reach. Adding a module to the registry puts it here automatically.
+  const sections = buildStaffNav(allModules, can);
 
   // Longest prefix wins, so /staff/finance/batches resolves before /staff/finance.
   // The words here match what each screen calls itself and what the nav calls it —

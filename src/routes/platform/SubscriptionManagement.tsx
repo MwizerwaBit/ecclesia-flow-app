@@ -7,7 +7,7 @@
  * have made on a support call.
  */
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useParams } from 'react-router-dom';
 import {
   BadgePercent,
@@ -20,7 +20,7 @@ import {
 } from 'lucide-react';
 import type { OrgTier } from '@/types';
 import { platformService } from '@/services/platformService';
-import { Badge, Button, Card, Input, SegmentedControl, Select, Text } from '@/components/ui';
+import { Badge, BottomSheet, Button, Card, Input, SegmentedControl, Select, Text } from '@/components/ui';
 import { formatCurrency, formatDate } from '@/lib/formatters';
 
 type Timing = 'immediate' | 'renewal';
@@ -49,6 +49,50 @@ export function SubscriptionManagement() {
   const [extendDays, setExtendDays] = useState('');
   const [extendNote, setExtendNote] = useState('');
   const [discountPercent, setDiscountPercent] = useState('');
+  const [isCancelOpen, setCancelOpen] = useState(false);
+  const [cancelReason, setCancelReason] = useState('');
+  const [paidNote, setPaidNote] = useState('');
+  const [isPaidOpen, setPaidOpen] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  const queryClient = useQueryClient();
+  const refresh = () => queryClient.invalidateQueries({ queryKey: ['platform', 'org', id] });
+  const flash = (message: string) => {
+    setNotice(message);
+    window.setTimeout(() => setNotice(null), 3000);
+  };
+
+  const applyTier = useMutation({
+    mutationFn: () => platformService.setSubscription(id, { tier: activeTier, cycle, effective: timing }),
+    onSuccess: () => {
+      void refresh();
+      flash(`Tier set to ${activeTier}, effective ${timing === 'immediate' ? 'now' : 'at renewal'}.`);
+    },
+  });
+
+  const markPaid = useMutation({
+    mutationFn: () => platformService.markInvoicePaid(id, paidNote.trim()),
+    onSuccess: () => {
+      void refresh();
+      setPaidOpen(false);
+      setPaidNote('');
+      flash('Recorded as paid.');
+    },
+  });
+
+  const generateInvoice = useMutation({
+    mutationFn: () => platformService.generateInvoice(id),
+    onSuccess: () => flash('Invoice generated and emailed to the primary contact.'),
+  });
+
+  const cancel = useMutation({
+    mutationFn: () => platformService.cancelSubscription(id, cancelReason.trim()),
+    onSuccess: () => {
+      void refresh();
+      setCancelOpen(false);
+      flash('Subscription cancelled.');
+    },
+  });
 
   const { data: org } = useQuery({
     queryKey: ['platform', 'org', id],
@@ -158,7 +202,13 @@ export function SubscriptionManagement() {
             </div>
           )}
 
-          <Button variant="primary" fullWidth disabled={!isChangingTier}>
+          <Button
+            variant="primary"
+            fullWidth
+            disabled={!isChangingTier}
+            isLoading={applyTier.isPending}
+            onClick={() => applyTier.mutate()}
+          >
             Apply tier change
           </Button>
         </Card>
@@ -225,15 +275,21 @@ export function SubscriptionManagement() {
           Payments
         </Text>
         <Card padding="md" className="space-y-3">
-          <Button variant="secondary" fullWidth leftIcon={Check}>
+          <Button variant="secondary" fullWidth leftIcon={Check} onClick={() => setPaidOpen(true)}>
             Mark as paid manually
           </Button>
           <Text variant="caption" color="muted">
             For bank transfer and mobile money, which never touch the card processor.
           </Text>
-          <Button variant="ghost" fullWidth rightIcon={ExternalLink}>
-            Open in payment processor
-          </Button>
+          <a
+            href={`https://dashboard.stripe.com/search?query=${encodeURIComponent(org?.slug ?? '')}`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            <Button variant="ghost" fullWidth rightIcon={ExternalLink}>
+              Open in payment processor
+            </Button>
+          </a>
         </Card>
       </div>
 
@@ -262,14 +318,92 @@ export function SubscriptionManagement() {
             </div>
           ))}
         </Card>
-        <Button variant="ghost" fullWidth className="mt-3" leftIcon={CreditCard}>
+        <Button
+          variant="ghost"
+          fullWidth
+          className="mt-3"
+          leftIcon={CreditCard}
+          isLoading={generateInvoice.isPending}
+          onClick={() => generateInvoice.mutate()}
+        >
           Generate an invoice
         </Button>
       </div>
 
-      <Button variant="ghost" fullWidth leftIcon={XCircle}>
+      <Button variant="ghost" fullWidth leftIcon={XCircle} onClick={() => setCancelOpen(true)}>
         Cancel subscription
       </Button>
+
+      {/* Confirmation of what just happened — these all move money. */}
+      {notice && (
+        <div className="flex items-center gap-2 rounded-lg bg-success-light px-3 py-2.5 animate-fade-in">
+          <Check size={16} className="text-success shrink-0" aria-hidden />
+          <Text variant="body-sm" className="text-success">
+            {notice}
+          </Text>
+        </div>
+      )}
+
+      {isPaidOpen && (
+        <BottomSheet
+          open
+          onClose={() => setPaidOpen(false)}
+          title="Mark as paid"
+          description="For bank transfer and mobile money, which never reach the card processor."
+          footer={
+            <Button
+              variant="primary"
+              size="lg"
+              fullWidth
+              disabled={paidNote.trim().length === 0}
+              isLoading={markPaid.isPending}
+              onClick={() => markPaid.mutate()}
+            >
+              Record payment
+            </Button>
+          }
+        >
+          <Input
+            label="Reference"
+            autoFocus
+            placeholder="Bank transfer ref 88214, received 2 Oct"
+            value={paidNote}
+            onChange={(e) => setPaidNote(e.target.value)}
+          />
+          <Text variant="caption" color="muted" className="block mt-3">
+            Recorded against your name in the platform audit log.
+          </Text>
+        </BottomSheet>
+      )}
+
+      {isCancelOpen && (
+        <BottomSheet
+          open
+          onClose={() => setCancelOpen(false)}
+          title={`Cancel ${org?.displayName ?? 'this subscription'}`}
+          description="Billing stops at the end of the current period. Their data is retained for 90 days and they can export all of it."
+          footer={
+            <Button
+              variant="destructive"
+              size="lg"
+              fullWidth
+              disabled={cancelReason.trim().length === 0}
+              isLoading={cancel.isPending}
+              onClick={() => cancel.mutate()}
+            >
+              Cancel subscription
+            </Button>
+          }
+        >
+          <Input
+            label="Reason"
+            autoFocus
+            placeholder="Church closed; requested by the primary contact"
+            value={cancelReason}
+            onChange={(e) => setCancelReason(e.target.value)}
+          />
+        </BottomSheet>
+      )}
     </div>
   );
 }

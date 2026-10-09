@@ -9,6 +9,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Download, Mail } from 'lucide-react';
 import { financeService } from '@/services/financeService';
+import { printPage } from '@/lib/download';
 import { Button, Card, Text } from '@/components/ui';
 import { formatCurrency, formatDate } from '@/lib/formatters';
 
@@ -110,10 +111,15 @@ export function StatementPreview() {
       </Card>
 
       <div className="flex gap-2">
-        <Button variant="primary" fullWidth leftIcon={Mail}>
-          Send to {recipient.split(' ')[0]}
-        </Button>
-        <Button variant="secondary" leftIcon={Download}>
+        <a
+          href={`mailto:?subject=${encodeURIComponent(`Your ${STATEMENT_YEAR} contribution statement`)}`}
+          className="flex-1"
+        >
+          <Button variant="primary" fullWidth leftIcon={Mail}>
+            Send to {recipient.split(' ')[0]}
+          </Button>
+        </a>
+        <Button variant="secondary" leftIcon={Download} onClick={printPage}>
           PDF
         </Button>
       </div>

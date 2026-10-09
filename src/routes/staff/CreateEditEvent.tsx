@@ -75,6 +75,13 @@ export function CreateEditEvent() {
     enabled: isEditing,
   });
 
+  // Cancelling keeps the record and its attendance; it only changes status, so
+  // the gathering still appears in history rather than vanishing from reports.
+  const cancelEvent = useMutation({
+    mutationFn: () => eventsService.update(id!, { status: 'canceled' }),
+    onSuccess: (event) => navigate(`/staff/events/${event.id}`),
+  });
+
   const save = useMutation({
     mutationFn: () => {
       const payload = {
@@ -226,7 +233,13 @@ export function CreateEditEvent() {
       </Button>
 
       {isEditing && (
-        <Button variant="ghost" fullWidth leftIcon={Trash2}>
+        <Button
+          variant="ghost"
+          fullWidth
+          leftIcon={Trash2}
+          isLoading={cancelEvent.isPending}
+          onClick={() => cancelEvent.mutate()}
+        >
           Cancel this gathering
         </Button>
       )}

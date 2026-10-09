@@ -85,9 +85,11 @@ export function CertificateTemplates() {
           title="No templates in this category"
           description="A template defines the artwork and where each detail is printed."
           action={
-            <Button variant="primary" leftIcon={Plus}>
-              Create a template
-            </Button>
+            <Link to="/staff/certificates/templates/ct1/design">
+              <Button variant="primary" leftIcon={Plus}>
+                Create a template
+              </Button>
+            </Link>
           }
         />
       )}

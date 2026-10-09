@@ -13,6 +13,7 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { PublicLayout } from './layouts/PublicLayout';
 import { MarketingLayout } from './layouts/MarketingLayout';
+import { buildModuleRoutes } from '@/modules/routes';
 import { MemberLayout } from './layouts/MemberLayout';
 import { StaffLayout } from './layouts/StaffLayout';
 import { BoardLayout } from './layouts/BoardLayout';
@@ -54,6 +55,7 @@ const marketingRoutes = {
     { path: 'churches', lazy: screen(() => import('./public/ChooseChurch'), 'ChooseChurch') },
     { path: 'c/:slug', lazy: screen(() => import('./public/ChurchLandingPage'), 'ChurchLandingPage') },
     { path: 'c/:slug/calendar', lazy: screen(() => import('./public/PublicEventCalendar'), 'PublicEventCalendar') },
+    { path: 'c/:slug/join', lazy: screen(() => import('./public/JoinChurch'), 'JoinChurch') },
   ],
 };
 
@@ -72,6 +74,7 @@ const publicRoutes = {
     { path: 'verify-email', lazy: screen(() => import('./auth/AuthStatusScreens'), 'VerificationWaiting') },
     { path: 'account-locked', lazy: screen(() => import('./auth/AuthStatusScreens'), 'AccountLocked') },
     { path: 'session-expired', lazy: screen(() => import('./auth/AuthStatusScreens'), 'SessionExpired') },
+    { path: 'accept-invite', lazy: screen(() => import('./auth/AcceptInvite'), 'AcceptInvite') },
   ],
 };
 
@@ -85,6 +88,8 @@ const onboardingRoutes = {
   path: '/',
   children: [
     { path: 'onboarding/complete', lazy: screen(() => import('./onboarding/WizardComplete'), 'WizardComplete') },
+    // Checkout is part of onboarding (and plan changes): full-page, no app chrome.
+    { path: 'billing/checkout/:sessionId', lazy: screen(() => import('./billing/DemoCheckout'), 'DemoCheckout') },
     {
       path: 'onboarding',
       lazy: screen(() => import('./onboarding/OnboardingWizard'), 'OnboardingWizard'),
@@ -102,6 +107,8 @@ const memberRoutes = {
     { path: 'giving', lazy: screen(() => import('./portal/MyGiving'), 'MyGiving') },
     { path: 'events', lazy: screen(() => import('./portal/UpcomingEvents'), 'UpcomingEvents') },
     { path: 'events/:id', lazy: screen(() => import('./portal/MemberEventDetail'), 'MemberEventDetail') },
+    { path: 'groups', lazy: screen(() => import('./portal/MyGroups'), 'MyGroups') },
+    { path: 'groups/:id', lazy: screen(() => import('./portal/MyGroupDetail'), 'MyGroupDetail') },
     {
       path: 'notifications',
       lazy: screen(() => import('./portal/NotificationInbox'), 'NotificationInbox'),
@@ -120,74 +127,9 @@ const staffRoutes = {
   children: [
     { path: 'dashboard', lazy: screen(() => import('./staff/StaffDashboard'), 'StaffDashboard') },
 
-    // People — literal segments are declared before ':id' so they are not read as one
-    { path: 'members', lazy: screen(() => import('./staff/MembersList'), 'MembersList') },
-    { path: 'members/add', lazy: screen(() => import('./staff/people/MemberForm'), 'MemberForm') },
-    { path: 'members/not-seen', lazy: screen(() => import('./staff/people/NotSeenRecently'), 'NotSeenRecently') },
-    { path: 'members/visitor-followup', lazy: screen(() => import('./staff/people/VisitorFollowUp'), 'VisitorFollowUp') },
-    { path: 'members/:id', lazy: screen(() => import('./staff/MemberProfileStaff'), 'MemberProfileStaff') },
-    { path: 'members/:id/edit', lazy: screen(() => import('./staff/people/MemberForm'), 'MemberForm') },
-
-    { path: 'members/export', lazy: screen(() => import('./staff/people/MemberCsvExport'), 'MemberCsvExport') },
-    { path: 'households/:id', lazy: screen(() => import('./staff/people/HouseholdView'), 'HouseholdView') },
-
-    // Attendance
-    { path: 'attendance/take', lazy: screen(() => import('./staff/TakeAttendance'), 'TakeAttendance') },
-    { path: 'attendance/headcount', lazy: screen(() => import('./staff/HeadcountEntry'), 'HeadcountEntry') },
-    { path: 'attendance/report', lazy: screen(() => import('./staff/AttendanceReport'), 'AttendanceReport') },
-
-    // Gatherings
-    { path: 'events', lazy: screen(() => import('./staff/EventsList'), 'EventsList') },
-    { path: 'events/new', lazy: screen(() => import('./staff/CreateEditEvent'), 'CreateEditEvent') },
-    { path: 'events/:id', lazy: screen(() => import('./staff/EventDetail'), 'EventDetail') },
-    { path: 'events/:id/edit', lazy: screen(() => import('./staff/CreateEditEvent'), 'CreateEditEvent') },
-
-    // Structure
-    { path: 'hierarchy', lazy: screen(() => import('./staff/hierarchy/HierarchyTreeView'), 'HierarchyTreeView') },
-    { path: 'hierarchy/units/:id', lazy: screen(() => import('./staff/hierarchy/UnitDetail'), 'UnitDetail') },
-
-    // Analytics & media
-    { path: 'analytics', lazy: screen(() => import('./staff/AnalyticsDashboard'), 'AnalyticsDashboard') },
-    { path: 'documents', lazy: screen(() => import('./staff/DocumentLibrary'), 'DocumentLibrary') },
-
-    // Giving
-    { path: 'finance', lazy: screen(() => import('./staff/finance/FinanceDashboard'), 'FinanceDashboard') },
-    { path: 'finance/batches', lazy: screen(() => import('./staff/finance/DonationBatches'), 'DonationBatches') },
-    { path: 'finance/batches/:batchId/donations/new', lazy: screen(() => import('./staff/finance/DonationEntry'), 'DonationEntry') },
-    { path: 'finance/batches/:batchId/review', lazy: screen(() => import('./staff/finance/BatchReviewClose'), 'BatchReviewClose') },
-    { path: 'finance/batches/:batchId/void', lazy: screen(() => import('./staff/finance/DonationVoid'), 'DonationVoid') },
-    { path: 'finance/funds', lazy: screen(() => import('./staff/finance/FundManagement'), 'FundManagement') },
-    { path: 'finance/pledges', lazy: screen(() => import('./staff/finance/PledgeManagement'), 'PledgeManagement') },
-    { path: 'finance/reports', lazy: screen(() => import('./staff/finance/GivingReports'), 'GivingReports') },
-    { path: 'finance/statements', lazy: screen(() => import('./staff/finance/ContributionStatements'), 'ContributionStatements') },
-    { path: 'finance/statements/preview', lazy: screen(() => import('./staff/finance/StatementPreview'), 'StatementPreview') },
-
-    // Communications
-    { path: 'comms/announcements', lazy: screen(() => import('./staff/comms/AnnouncementsList'), 'AnnouncementsList') },
-    { path: 'comms/announcements/new', lazy: screen(() => import('./staff/comms/CreateAnnouncement'), 'CreateAnnouncement') },
-    { path: 'comms/announcements/:id', lazy: screen(() => import('./staff/comms/AnnouncementDetail'), 'AnnouncementDetail') },
-
-    // Team & roles
-    { path: 'team', lazy: screen(() => import('./staff/team/TeamAndRoles'), 'TeamAndRoles') },
-    { path: 'team/invite', lazy: screen(() => import('./staff/team/InviteStaff'), 'InviteStaff') },
-    { path: 'team/roles/new', lazy: screen(() => import('./staff/team/CustomRoleBuilder'), 'CustomRoleBuilder') },
-    { path: 'team/leadership', lazy: screen(() => import('./staff/team/ChurchLeadership'), 'ChurchLeadership') },
-    { path: 'team/leadership/transfer', lazy: screen(() => import('./staff/team/TransferLeadership'), 'TransferLeadership') },
-
-    // Settings
-    { path: 'settings', lazy: screen(() => import('./staff/settings/OrganisationSettings'), 'OrganisationSettings') },
-    { path: 'settings/security', lazy: screen(() => import('./staff/settings/SecuritySettings'), 'SecuritySettings') },
-    { path: 'settings/notifications', lazy: screen(() => import('./staff/settings/NotificationPreferences'), 'NotificationPreferences') },
-    { path: 'settings/billing', lazy: screen(() => import('./staff/settings/SubscriptionBilling'), 'SubscriptionBilling') },
-    { path: 'settings/data', lazy: screen(() => import('./staff/settings/DataPrivacy'), 'DataPrivacy') },
-    { path: 'settings/integrations', lazy: screen(() => import('./staff/settings/ApiIntegrations'), 'ApiIntegrations') },
-
-    // Certificates
-    { path: 'certificates', lazy: screen(() => import('./staff/certificates/CertificateTemplates'), 'CertificateTemplates') },
-    { path: 'certificates/issue', lazy: screen(() => import('./staff/certificates/IssueCertificate'), 'IssueCertificate') },
-    { path: 'certificates/bulk-issue', lazy: screen(() => import('./staff/certificates/BulkIssue'), 'BulkIssue') },
-    { path: 'certificates/issued/:id', lazy: screen(() => import('./staff/certificates/IssuedCertificateDetail'), 'IssuedCertificateDetail') },
-    { path: 'certificates/templates/:id/design', lazy: screen(() => import('./staff/certificates/TemplateDesigner'), 'TemplateDesigner') },
+    // Everything else on this surface comes from the module registry, so a
+    // module is added by editing src/modules/registry.ts and nothing here.
+    ...buildModuleRoutes(),
   ],
 };
 

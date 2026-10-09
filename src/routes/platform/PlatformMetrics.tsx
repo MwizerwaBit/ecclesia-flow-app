@@ -9,6 +9,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Download, Globe2, TrendingUp, UserMinus, Zap } from 'lucide-react';
 import { platformService } from '@/services/platformService';
+import { downloadCsv } from '@/lib/download';
 import { Card, Button, StatTile, Text } from '@/components/ui';
 import { formatCurrencyCompact, formatNumber, formatPercent } from '@/lib/formatters';
 
@@ -179,7 +180,35 @@ export function PlatformMetrics() {
         </div>
       </Card>
 
-      <Button variant="secondary" fullWidth leftIcon={Download}>
+      <Button
+        variant="secondary"
+        fullWidth
+        leftIcon={Download}
+        onClick={() =>
+          downloadCsv(
+            'platform-metrics',
+            [
+              ['Metric', (r) => r.metric],
+              ['Value', (r) => r.value],
+            ],
+            [
+              { metric: 'MRR', value: metrics?.mrr ?? 0 },
+              { metric: 'Total organisations', value: metrics?.totalOrgs ?? 0 },
+              { metric: 'Active organisations', value: metrics?.activeOrgs ?? 0 },
+              { metric: 'Total members', value: metrics?.totalMembers ?? 0 },
+              { metric: 'Signups this month', value: metrics?.newSignupsThisMonth ?? 0 },
+              { metric: 'Trial to paid', value: TRIAL_CONVERSION },
+              { metric: 'Churn 30d', value: CHURN.d30 },
+              { metric: 'Churn 60d', value: CHURN.d60 },
+              { metric: 'Churn 90d', value: CHURN.d90 },
+              { metric: 'Days to first Sunday', value: DAYS_TO_FIRST_SUNDAY },
+              ...mrrTrend.map((p) => ({ metric: `MRR ${p.label}`, value: p.amount })),
+              ...BY_COUNTRY.map((c) => ({ metric: `Members ${c.country}`, value: c.members })),
+              ...FEATURE_ADOPTION.map((f) => ({ metric: `Adoption ${f.feature}`, value: f.rate })),
+            ],
+          )
+        }
+      >
         Export all metrics
       </Button>
     </div>

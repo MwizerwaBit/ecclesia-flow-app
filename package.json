@@ -11,7 +11,9 @@
     "audit:ui": "node scripts/ui-audit.mjs",
     "audit:links": "node scripts/link-audit.mjs",
     "audit:nav": "node scripts/nav-smoke.mjs",
-    "pwa:assets": "pwa-assets-generator"
+    "pwa:assets": "pwa-assets-generator",
+    "fix:eol": "python scripts/normalise-line-endings.py",
+    "audit:controls": "node scripts/dead-control-audit.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.9.1",

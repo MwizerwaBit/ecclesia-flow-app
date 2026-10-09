@@ -6,13 +6,16 @@
 import type {
   AuditLogEntry,
   CustomDomain,
+  DomainStatus,
   DataErasureRequest,
   FeatureFlag,
   OrgListItem,
   OrgStatus,
   PlatformMetrics,
 } from '@/types';
-import { mockResponse, API_MODE, apiRequest } from './adapter';
+import { mockResponse, API_MODE, apiBlob, apiRequest, requireApi } from './adapter';
+import type { BillingOverview, OrgDocument, OrgReviewRow, OrgTier } from '@/types';
+import type { ModuleSubscription } from '@/modules/types';
 import {
   MOCK_AUDIT_LOG,
   MOCK_DOMAINS,
@@ -190,5 +193,143 @@ export const platformService = {
   async getSystemHealth(): Promise<typeof MOCK_SYSTEM_HEALTH> {
     if (API_MODE === 'mock') return mockResponse(MOCK_SYSTEM_HEALTH);
     return apiRequest<typeof MOCK_SYSTEM_HEALTH>('/platform/system-health');
+  },
+
+  // ─── Actions the admin screens offer ────────────────────────────────────
+  // These were buttons with no behaviour. Mock-backed like everything else
+  // here, so the screens are honest about what they do and the REST calls are
+  // already written for when the backend lands.
+
+  async setSubscription(
+    orgId: string,
+    change: { tier?: string; cycle?: 'monthly' | 'annual'; effective?: 'immediate' | 'renewal' },
+  ): Promise<OrgListItem> {
+    if (API_MODE === 'mock') {
+      const org = MOCK_ORGS.find((o) => o.id === orgId) ?? MOCK_ORGS[0];
+      return mockResponse<OrgListItem>({ ...org, tier: (change.tier as OrgListItem['tier']) ?? org.tier });
+    }
+    return apiRequest<OrgListItem>(`/platform/orgs/${orgId}/subscription`, {
+      method: 'PATCH',
+      body: JSON.stringify(change),
+    });
+  },
+
+  /** Bank transfer and mobile money never touch the card processor. */
+  async markInvoicePaid(orgId: string, note: string): Promise<void> {
+    if (API_MODE === 'mock') return mockResponse(undefined as void);
+    return apiRequest(`/platform/orgs/${orgId}/invoices/mark-paid`, {
+      method: 'POST',
+      body: JSON.stringify({ note }),
+    });
+  },
+
+  async generateInvoice(orgId: string): Promise<{ id: string; url: string }> {
+    if (API_MODE === 'mock') {
+      return mockResponse({ id: `in-${Date.now()}`, url: '#' }, 500);
+    }
+    return apiRequest(`/platform/orgs/${orgId}/invoices`, { method: 'POST' });
+  },
+
+  async cancelSubscription(orgId: string, reason: string): Promise<OrgListItem> {
+    if (API_MODE === 'mock') {
+      const org = MOCK_ORGS.find((o) => o.id === orgId) ?? MOCK_ORGS[0];
+      return mockResponse<OrgListItem>({ ...org, status: 'canceled' });
+    }
+    return apiRequest<OrgListItem>(`/platform/orgs/${orgId}/subscription`, {
+      method: 'DELETE',
+      body: JSON.stringify({ reason }),
+    });
+  },
+
+  async revokePlatformAdmin(adminId: string): Promise<void> {
+    if (API_MODE === 'mock') return mockResponse(undefined as void);
+    return apiRequest(`/platform/admins/${adminId}`, { method: 'DELETE' });
+  },
+
+  async blockIp(ip: string): Promise<void> {
+    if (API_MODE === 'mock') return mockResponse(undefined as void);
+    return apiRequest('/platform/rate-limits/block', {
+      method: 'POST',
+      body: JSON.stringify({ ip }),
+    });
+  },
+
+  /** Suspending keeps the domain record so it can be reinstated without redoing DNS. */
+  async setDomainStatus(domainId: string, status: DomainStatus): Promise<CustomDomain> {
+    if (API_MODE === 'mock') {
+      const domain = MOCK_DOMAINS.find((d) => d.id === domainId) ?? MOCK_DOMAINS[0];
+      return mockResponse<CustomDomain>({ ...domain, status });
+    }
+    return apiRequest<CustomDomain>(`/platform/domains/${domainId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+  },
+
+  // ── Registration review & lifecycle (API only) ───────────────────────
+
+  async listOrgsForReview(filters?: { status?: string; search?: string }): Promise<OrgReviewRow[]> {
+    requireApi('Organisation review');
+    const qs = new URLSearchParams(
+      Object.entries(filters ?? {}).filter(([, v]) => Boolean(v)) as Array<[string, string]>,
+    ).toString();
+    return apiRequest<OrgReviewRow[]>(`/platform/orgs${qs ? `?${qs}` : ''}`);
+  },
+
+  async activateOrg(orgId: string, note: string): Promise<OrgReviewRow> {
+    requireApi('Organisation activation');
+    return apiRequest<OrgReviewRow>(`/platform/orgs/${orgId}/activate`, { method: 'POST', body: JSON.stringify({ note }) });
+  },
+
+  async changeOrgStatus(orgId: string, status: 'suspended' | 'active' | 'canceled', reason: string): Promise<OrgReviewRow> {
+    requireApi('Organisation status');
+    return apiRequest<OrgReviewRow>(`/platform/orgs/${orgId}/status`, {
+      method: 'POST',
+      body: JSON.stringify({ status, reason }),
+    });
+  },
+
+  async orgDocuments(orgId: string): Promise<OrgDocument[]> {
+    requireApi('Organisation documents');
+    return apiRequest<OrgDocument[]>(`/platform/orgs/${orgId}/documents`);
+  },
+
+  async downloadOrgDocument(orgId: string, documentId: string): Promise<Blob> {
+    requireApi('Organisation documents');
+    return apiBlob(`/platform/orgs/${orgId}/documents/${documentId}/download`);
+  },
+
+  async reviewOrgDocument(
+    orgId: string,
+    documentId: string,
+    decision: 'verified' | 'rejected',
+    note?: string,
+  ): Promise<OrgDocument[]> {
+    requireApi('Organisation documents');
+    return apiRequest<OrgDocument[]>(`/platform/orgs/${orgId}/documents/${documentId}/review`, {
+      method: 'POST',
+      body: JSON.stringify({ decision, note: note || undefined }),
+    });
+  },
+
+  async orgBilling(orgId: string): Promise<BillingOverview> {
+    requireApi('Organisation billing');
+    return apiRequest<BillingOverview>(`/platform/orgs/${orgId}/billing`);
+  },
+
+  async setOrgModule(orgId: string, moduleId: string, enabled: boolean | null): Promise<ModuleSubscription> {
+    requireApi('Organisation modules');
+    return apiRequest<ModuleSubscription>(`/platform/orgs/${orgId}/modules/${moduleId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ enabled }),
+    });
+  },
+
+  async setOrgTier(orgId: string, tier: OrgTier): Promise<ModuleSubscription> {
+    requireApi('Organisation plan');
+    return apiRequest<ModuleSubscription>(`/platform/orgs/${orgId}/modules/tier`, {
+      method: 'PUT',
+      body: JSON.stringify({ tier }),
+    });
   },
 };

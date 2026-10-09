@@ -12,6 +12,7 @@ import { Link } from 'react-router-dom';
 import { Download, Search, ShieldAlert } from 'lucide-react';
 import { platformService } from '@/services/platformService';
 import { CRITICAL_ACTIONS } from '@/mocks/platform.mock';
+import { downloadCsv } from '@/lib/download';
 import { Badge, Button, Card, Checkbox, EmptyState, Input, Text } from '@/components/ui';
 import { formatDateTime } from '@/lib/formatters';
 import { cn } from '@/lib/cn';
@@ -141,8 +142,30 @@ export function PlatformAuditLog() {
         })}
       </Card>
 
-      <Button variant="secondary" fullWidth leftIcon={Download} className="mt-5">
-        Export to CSV for compliance
+      <Button
+        variant="secondary"
+        fullWidth
+        leftIcon={Download}
+        className="mt-5"
+        disabled={visible.length === 0}
+        onClick={() =>
+          downloadCsv(
+            'platform-audit-log',
+            [
+              ['Timestamp', (e) => e.createdAt],
+              ['Action', (e) => e.action],
+              ['User', (e) => e.userName],
+              ['Organisation', (e) => e.orgName ?? ''],
+              ['Resource', (e) => e.resourceType],
+              ['IP', (e) => e.ipAddress ?? ''],
+              ['Impersonated', (e) => (e.isImpersonated ? 'yes' : 'no')],
+              ['Metadata', (e) => (e.metadata ? JSON.stringify(e.metadata) : '')],
+            ],
+            visible,
+          )
+        }
+      >
+        Export {visible.length} entries to CSV
       </Button>
     </div>
   );

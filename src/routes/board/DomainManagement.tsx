@@ -39,6 +39,13 @@ function DomainRow({ domain }: { domain: CustomDomain }) {
   const meta = STATUS_META[domain.status];
   const needsDns = domain.status === 'pending_verification' || domain.status === 'failed';
 
+  // Suspension reverts the church to their ecclesiaflow.com subdomain; the
+  // domain record is kept so it can be reinstated without redoing DNS.
+  const suspend = useMutation({
+    mutationFn: () => platformService.setDomainStatus(domain.id, 'suspended'),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['domains'] }),
+  });
+
   const verify = useMutation({
     mutationFn: () => platformService.verifyDomain(domain.id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['domains'] }),
@@ -117,7 +124,12 @@ function DomainRow({ domain }: { domain: CustomDomain }) {
           {verify.isPending ? 'Checking DNS…' : 'Check now'}
         </Button>
         {domain.status === 'active' && (
-          <Button variant="ghost" size="sm">
+          <Button
+            variant="ghost"
+            size="sm"
+            isLoading={suspend.isPending}
+            onClick={() => suspend.mutate()}
+          >
             Suspend
           </Button>
         )}

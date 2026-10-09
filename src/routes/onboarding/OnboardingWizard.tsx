@@ -162,9 +162,14 @@ export function OnboardingWizard() {
             
             {/* Preview Card */}
             <div className="mt-6 p-4 rounded-xl border border-slate-200 dark:border-slate-700" style={{ backgroundColor: `${formData.primaryColor}15` }}>
-              <Button style={{ backgroundColor: formData.primaryColor, color: '#fff' }} variant="primary" className="border-none">
-                Preview Button
-              </Button>
+              {/* A sample of the chosen colour, not something to press. */}
+              <span
+                role="presentation"
+                className="inline-flex h-11 items-center rounded-lg px-4 text-body font-medium"
+                style={{ backgroundColor: formData.primaryColor, color: '#fff' }}
+              >
+                Preview button
+              </span>
             </div>
           </div>
         );

@@ -37,10 +37,26 @@ export interface User {
   unitScopeId?: string;
 }
 
+/** One church this login belongs to (a person can serve in several). */
+export interface MembershipSummary {
+  id: string;
+  tenantId: string;
+  tenantName: string;
+  roleName: string;
+  isPrimary: boolean;
+  isLeader: boolean;
+  unitScopeId?: string | null;
+}
+
 export interface AuthSession {
   user: User;
+  /** In REST mode this is held in memory only and is never persisted. */
   accessToken: string;
   expiresAt: number; // Unix timestamp
+  /** True only when this sign-in passed a second factor; some actions require it. */
+  mfaVerified?: boolean;
+  membershipId?: string;
+  memberships?: MembershipSummary[];
   isImpersonating?: boolean;
   impersonatedOrgName?: string;
   impersonatedRole?: string;
@@ -59,6 +75,19 @@ export interface MagicLinkRequest {
 export interface MfaVerification {
   code: string;
   type: 'totp' | 'backup';
+}
+
+/** Returned instead of a session when the account has two-step sign-in on. */
+export interface MfaChallenge {
+  mfaRequired: true;
+  challengeToken: string;
+}
+
+export interface AcceptInvitePayload {
+  token: string;
+  password: string;
+  firstName?: string;
+  lastName?: string;
 }
 
 export interface ResetPasswordPayload {

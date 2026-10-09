@@ -12,9 +12,9 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { Check, HeartHandshake, Mail, Phone, Undo2, UserCheck } from 'lucide-react';
+import { Check, HeartHandshake, Undo2, UserCheck } from 'lucide-react';
 import { membersService } from '@/services/membersService';
-import { Avatar, Badge, Button, Card, EmptyState, Text } from '@/components/ui';
+import { Avatar, Badge, Button, Card, ContactActions, EmptyState, Text } from '@/components/ui';
 import { formatDate } from '@/lib/formatters';
 import { cn } from '@/lib/cn';
 
@@ -128,12 +128,13 @@ export function VisitorFollowUp() {
                 </div>
 
                 <div className="flex gap-2 mt-4">
-                  <Button variant="secondary" size="sm" leftIcon={Phone} className="flex-1">
-                    Call
-                  </Button>
-                  <Button variant="secondary" size="sm" leftIcon={Mail} className="flex-1">
-                    Email
-                  </Button>
+                  <ContactActions
+                    name={`${member.firstName} ${member.lastName}`}
+                    phone={member.phone}
+                    email={member.email}
+                    variant="secondary"
+                    className="flex-1"
+                  />
                   <Button
                     variant="primary"
                     size="sm"

@@ -72,9 +72,11 @@ export function WizardComplete() {
               Go to your dashboard
             </Button>
           </Link>
-          <Button variant="secondary" fullWidth leftIcon={Share2}>
-            Invite your staff
-          </Button>
+          <Link to="/staff/team/invite">
+            <Button variant="secondary" fullWidth leftIcon={Share2}>
+              Invite your staff
+            </Button>
+          </Link>
         </div>
 
         <Card variant="flat" padding="md" className="w-full max-w-xs text-left">

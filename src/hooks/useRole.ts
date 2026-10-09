@@ -23,9 +23,13 @@ const ROLE_PERMISSIONS: Record<Role, string[]> = {
   ],
   [ROLES.STAFF]: [
     'portal:view',
+    'giving:read_own',
+    'notifications:read',
     'members:read',
     'members:create',
     'members:update',
+    'groups:read',
+    'groups:manage',
     'attendance:read',
     'attendance:create',
     'events:read',
@@ -43,11 +47,16 @@ const ROLE_PERMISSIONS: Record<Role, string[]> = {
     'profile:update_own',
   ],
   [ROLES.BOARD]: [
-    // All staff permissions +
+    // All staff permissions (which include every member permission) +
+    'portal:view',
+    'giving:read_own',
+    'notifications:read',
     'members:read',
     'members:create',
     'members:update',
     'members:export',
+    'groups:read',
+    'groups:manage',
     'attendance:read',
     'attendance:create',
     'events:read',
@@ -71,6 +80,9 @@ const ROLE_PERMISSIONS: Record<Role, string[]> = {
     'analytics:read',
     'org:read',
     'org:settings',
+    'billing:manage',
+    'org:documents',
+    'events:review',
     'profile:read',
     'profile:update_own',
     'pastoral_notes:read',
@@ -80,6 +92,7 @@ const ROLE_PERMISSIONS: Record<Role, string[]> = {
     'parish_comparison:read',
     'domain:manage',
     'white_label:manage',
+    'affiliations:read',
   ],
   [ROLES.PLATFORM_ADMIN]: [
     // All permissions

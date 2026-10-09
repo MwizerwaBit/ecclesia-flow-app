@@ -8,9 +8,18 @@
  */
 import { useQuery } from '@tanstack/react-query';
 import { Link, Navigate } from 'react-router-dom';
-import { ArrowUpRight, CreditCard, Download, HardDrive, Network, Users } from 'lucide-react';
+import {
+  ArrowUpRight,
+  CreditCard,
+  Download,
+  ExternalLink,
+  HardDrive,
+  Network,
+  Users,
+} from 'lucide-react';
 import { membersService } from '@/services/membersService';
 import { commsService } from '@/services/commsService';
+import { printPage } from '@/lib/download';
 import { useRole } from '@/hooks/useRole';
 import { Badge, Button, Card, Text } from '@/components/ui';
 import { formatCurrency, formatDate } from '@/lib/formatters';
@@ -168,9 +177,11 @@ export function SubscriptionBilling() {
               Expires 08/2027
             </Text>
           </div>
-          <Button variant="ghost" size="sm">
-            Change
-          </Button>
+          <a href="https://billing.stripe.com/p/login" target="_blank" rel="noreferrer">
+            <Button variant="ghost" size="sm" rightIcon={ExternalLink}>
+              Change
+            </Button>
+          </a>
         </Card>
       </div>
 
@@ -188,7 +199,13 @@ export function SubscriptionBilling() {
               <Text variant="body-sm" className="tabular-nums font-medium shrink-0">
                 {formatCurrency(invoice.amount)}
               </Text>
-              <Button variant="ghost" size="sm" leftIcon={Download} aria-label="Download invoice">
+              <Button
+                variant="ghost"
+                size="sm"
+                leftIcon={Download}
+                aria-label={`Download the invoice for ${formatDate(invoice.date)}`}
+                onClick={printPage}
+              >
                 PDF
               </Button>
             </div>

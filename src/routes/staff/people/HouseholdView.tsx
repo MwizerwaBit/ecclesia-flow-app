@@ -10,9 +10,9 @@
  */
 import { useQuery } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
-import { Home, Mail, Phone, Users } from 'lucide-react';
+import { Home, Users } from 'lucide-react';
 import { membersService } from '@/services/membersService';
-import { Avatar, Badge, Button, Card, EmptyState, Skeleton, StatTile, Text } from '@/components/ui';
+import { Avatar, Badge, Button, Card, ContactActions, EmptyState, Skeleton, StatTile, Text } from '@/components/ui';
 import { formatCurrency } from '@/lib/formatters';
 
 export function HouseholdView() {
@@ -137,14 +137,13 @@ export function HouseholdView() {
         </Card>
       </div>
 
-      <div className="flex gap-2">
-        <Button variant="secondary" fullWidth leftIcon={Phone}>
-          Call the house
-        </Button>
-        <Button variant="secondary" fullWidth leftIcon={Mail}>
-          Email all
-        </Button>
-      </div>
+      {/* One address, one number — the household's own contact details. */}
+      <ContactActions
+        name={`the ${head.lastName} household`}
+        phone={head.phone}
+        email={head.email}
+        variant="secondary"
+      />
     </div>
   );
 }

@@ -12,6 +12,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
 import { Ban, Download, QrCode, Share2 } from 'lucide-react';
 import { certificatesService } from '@/services/certificatesService';
+import { printPage, shareOrCopy } from '@/lib/download';
 import { CertificateCanvas } from '@/components/certificates/CertificateCanvas';
 import { Badge, BottomSheet, Button, Card, Input, Text } from '@/components/ui';
 import { formatDate } from '@/lib/formatters';
@@ -21,6 +22,8 @@ export function IssuedCertificateDetail() {
   const queryClient = useQueryClient();
 
   const [isRevokeOpen, setRevokeOpen] = useState(false);
+  /** Confirms what Share actually did — the sheet and the clipboard look identical otherwise. */
+  const [shareNote, setShareNote] = useState<string | null>(null);
   const [reason, setReason] = useState('');
 
   const { data: certificate, isLoading } = useQuery({
@@ -155,13 +158,29 @@ export function IssuedCertificateDetail() {
       </Card>
 
       <div className="flex gap-2">
-        <Button variant="primary" fullWidth leftIcon={Download}>
+        <Button variant="primary" fullWidth leftIcon={Download} onClick={printPage}>
           Download PDF
         </Button>
-        <Button variant="secondary" leftIcon={Share2}>
+        <Button
+          variant="secondary"
+          leftIcon={Share2}
+          onClick={async () => {
+            const result = await shareOrCopy({
+              title: `${certificate.templateName} — ${certificate.memberName}`,
+              url: verifyUrl,
+            });
+            if (result !== 'failed') setShareNote(result === 'shared' ? 'Shared' : 'Link copied');
+          }}
+        >
           Share
         </Button>
       </div>
+
+      {shareNote && (
+        <Text variant="caption" className="text-success block text-center animate-fade-in">
+          {shareNote}
+        </Text>
+      )}
 
       {!certificate.isRevoked && (
         <Button variant="ghost" fullWidth leftIcon={Ban} onClick={() => setRevokeOpen(true)}>

@@ -14,7 +14,10 @@ const EDGE = 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe';
 const ORIGIN = 'http://localhost:5173';
 
 const CASES = [
-  { role: 'staff', start: '/staff/dashboard', expect: 'Structure' },
+  // `expect` is a destination the role can reach; `absent` is one the permission
+  // filter should have removed, so this also checks that nav never offers a
+  // link that lands on Access Denied.
+  { role: 'staff', start: '/staff/dashboard', expect: 'Offering batches', absent: 'Structure' },
   { role: 'board', start: '/board/dashboard', expect: 'White-label' },
   { role: 'platform_admin', start: '/platform/dashboard', expect: 'Erasure Queue' },
 ];
@@ -27,7 +30,7 @@ const browser = await puppeteer.launch({
 
 let failures = 0;
 
-for (const { role, start, expect } of CASES) {
+for (const { role, start, expect, absent } of CASES) {
   const page = await browser.newPage();
   await page.setViewport({ width: 390, height: 844 });
 
@@ -67,12 +70,21 @@ for (const { role, start, expect } of CASES) {
   await menu.click();
   await new Promise((r) => setTimeout(r, 400));
 
-  const result = await page.evaluate((label) => {
-    const drawer = document.querySelector('[role="dialog"][aria-label="Navigation"]');
-    if (!drawer) return { open: false };
-    const links = [...drawer.querySelectorAll('a')].map((a) => a.textContent.trim());
-    return { open: true, count: links.length, has: links.some((l) => l.includes(label)) };
-  }, expect);
+  const result = await page.evaluate(
+    (label, forbidden) => {
+      const drawer = document.querySelector('[role="dialog"][aria-label="Navigation"]');
+      if (!drawer) return { open: false };
+      const links = [...drawer.querySelectorAll('a')].map((a) => a.textContent.trim());
+      return {
+        open: true,
+        count: links.length,
+        has: links.some((l) => l.includes(label)),
+        leaked: forbidden ? links.filter((l) => l.includes(forbidden)) : [],
+      };
+    },
+    expect,
+    absent ?? null,
+  );
 
   if (!result.open) {
     console.log(`FAIL ${role}: menu button did not open a drawer`);
@@ -80,8 +92,14 @@ for (const { role, start, expect } of CASES) {
   } else if (!result.has) {
     console.log(`FAIL ${role}: drawer has ${result.count} links but not "${expect}"`);
     failures += 1;
+  } else if (result.leaked.length) {
+    console.log(`FAIL ${role}: drawer offers "${absent}", which this role cannot open`);
+    failures += 1;
   } else {
-    console.log(`ok   ${role}: drawer opens with ${result.count} destinations, incl. "${expect}"`);
+    console.log(
+      `ok   ${role}: ${result.count} destinations, incl. "${expect}"` +
+        (absent ? `, and "${absent}" correctly hidden` : ''),
+    );
   }
 
   await page.close();
