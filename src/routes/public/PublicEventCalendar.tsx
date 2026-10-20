@@ -22,12 +22,11 @@ export function PublicEventCalendar() {
     enabled: Boolean(slug),
   });
 
-  const { data: events = [], isLoading } = useQuery({
+  const { data: publicEvents = [], isLoading } = useQuery({
     queryKey: ['events', 'public', slug],
-    queryFn: () => eventsService.list({ upcoming: true }),
+    queryFn: () => eventsService.publicEvents(slug),
+    enabled: Boolean(slug),
   });
-
-  const publicEvents = events.filter((e) => e.isPublic && e.status === 'published');
 
   if (isLoadingChurch) {
     return (
@@ -85,41 +84,43 @@ export function PublicEventCalendar() {
 
       <div className="space-y-3">
         {publicEvents.map((event) => (
-          <Card key={event.id} padding="md" variant="elevated">
-            <div className="flex gap-4">
-              <div className="shrink-0 w-14 rounded-xl bg-primary-light dark:bg-primary/15 py-2 text-center">
-                <p className="text-caption font-bold uppercase tracking-wider text-primary">
-                  {formatDateShort(event.startDateTime).split(' ')[0]}
-                </p>
-                <p className="font-display text-h2 leading-none text-primary">
-                  {new Date(event.startDateTime).getDate()}
-                </p>
-              </div>
-
-              <div className="min-w-0 flex-1">
-                <div className="flex items-start justify-between gap-2 mb-1">
-                  <Text variant="h3" className="min-w-0">
-                    {event.title}
-                  </Text>
-                  <Badge variant="primary" size="sm" className="shrink-0 capitalize">
-                    {event.type}
-                  </Badge>
+          <Link key={event.id} to={`/c/${slug}/events/${event.id}`}>
+            <Card padding="md" variant="elevated" className="hover:border-primary/40 transition-colors">
+              <div className="flex gap-4">
+                <div className="shrink-0 w-14 rounded-xl bg-primary-light dark:bg-primary/15 py-2 text-center">
+                  <p className="text-caption font-bold uppercase tracking-wider text-primary">
+                    {formatDateShort(event.startDateTime).split(' ')[0]}
+                  </p>
+                  <p className="font-display text-h2 leading-none text-primary">
+                    {new Date(event.startDateTime).getDate()}
+                  </p>
                 </div>
 
-                <Text variant="body-sm" color="muted" className="flex items-center gap-1.5">
-                  <Clock size={13} aria-hidden />
-                  {formatTime(event.startDateTime)}
-                </Text>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    <Text variant="h3" className="min-w-0">
+                      {event.title}
+                    </Text>
+                    <Badge variant="primary" size="sm" className="shrink-0 capitalize">
+                      {event.type}
+                    </Badge>
+                  </div>
 
-                {event.location && (
-                  <Text variant="body-sm" color="muted" className="flex items-center gap-1.5 mt-0.5">
-                    <MapPin size={13} aria-hidden />
-                    {event.location}
+                  <Text variant="body-sm" color="muted" className="flex items-center gap-1.5">
+                    <Clock size={13} aria-hidden />
+                    {formatTime(event.startDateTime)}
                   </Text>
-                )}
+
+                  {event.location && (
+                    <Text variant="body-sm" color="muted" className="flex items-center gap-1.5 mt-0.5">
+                      <MapPin size={13} aria-hidden />
+                      {event.location}
+                    </Text>
+                  )}
+                </div>
               </div>
-            </div>
-          </Card>
+            </Card>
+          </Link>
         ))}
       </div>
 
