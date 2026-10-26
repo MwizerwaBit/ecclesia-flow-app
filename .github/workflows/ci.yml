@@ -111,7 +111,6 @@ jobs:
 
       - name: Install Gitleaks
         run: go install github.com/zricethezav/gitleaks/v8@v8.24.2
-
       - name: Scan history for committed secrets
         run: "$(go env GOPATH)/bin/gitleaks" detect --source=. --no-banner --redact
 
