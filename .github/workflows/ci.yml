@@ -51,16 +51,21 @@ jobs:
         with:
           node-version: 22
           cache: npm
-      # Shipped code must have no high/critical advisories. Dev-only tooling
-      # advisories are tracked as exceptions in TODO.md (DIF-14).
+      
+        # Shipped code must have no high/critical advisories. Dev-only tooling
+        # advisories are tracked as exceptions in TODO.md (DIF-14).
       - name: Production dependency vulnerabilities
         run: npm audit --omit=dev --audit-level=high
+
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
-            go-version: "1.24.x"
+          go-version: "1.24.x"
+
       - name: Install Gitleaks
         run: go install github.com/zricethezav/gitleaks/v8@v8.24.2
+
       - name: Scan history for committed secrets
         run: "$(go env GOPATH)/bin/gitleaks" detect --source=. --no-banner --redact
+
 
