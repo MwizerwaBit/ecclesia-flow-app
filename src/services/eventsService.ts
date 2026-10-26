@@ -9,9 +9,15 @@ import type {
   AttendanceRecord,
   AttendanceSummary,
   ChurchEvent,
+  EventCollision,
   EventListItem,
+  EventRegistration,
+  EventRegistrationInput,
   HeadcountEntry,
   PublicEvent,
+  PublicEventDetail,
+  RegistrationField,
+  RegistrationFieldDraft,
   ReviewerOption,
 } from '@/types';
 import { mockResponse, API_MODE, apiRequest, requireApi } from './adapter';
@@ -204,5 +210,67 @@ export const eventsService = {
   async publicEvents(slug: string): Promise<PublicEvent[]> {
     requireApi('Public events');
     return apiRequest<PublicEvent[]>(`/churches/${encodeURIComponent(slug)}/events`, { skipAuth: true });
+  },
+
+  /** One public gathering, with its registration questions — the share link. */
+  async publicEventDetail(slug: string, eventId: string): Promise<PublicEventDetail> {
+    requireApi('Public events');
+    return apiRequest<PublicEventDetail>(
+      `/churches/${encodeURIComponent(slug)}/events/${encodeURIComponent(eventId)}`,
+      { skipAuth: true },
+    );
+  },
+
+  /** Anonymous RSVP through the public share link — no sign-in needed. */
+  async register(slug: string, eventId: string, input: EventRegistrationInput): Promise<EventRegistration> {
+    requireApi('Event registration');
+    return apiRequest<EventRegistration>(
+      `/churches/${encodeURIComponent(slug)}/events/${encodeURIComponent(eventId)}/register`,
+      { method: 'POST', body: JSON.stringify(input), skipAuth: true },
+    );
+  },
+
+  // ── Registration forms (API only) ───────────────────────────────────────
+
+  async getRegistrationFields(eventId: string): Promise<RegistrationField[]> {
+    requireApi('Registration forms');
+    return apiRequest<RegistrationField[]>(`/events/${eventId}/fields`);
+  },
+
+  /** Replaces the whole form, in the order given. */
+  async setRegistrationFields(eventId: string, fields: RegistrationFieldDraft[]): Promise<RegistrationField[]> {
+    requireApi('Registration forms');
+    return apiRequest<RegistrationField[]>(`/events/${eventId}/fields`, {
+      method: 'PUT',
+      body: JSON.stringify({ fields }),
+    });
+  },
+
+  async listResponses(eventId: string): Promise<EventRegistration[]> {
+    requireApi('Registration forms');
+    return apiRequest<EventRegistration[]>(`/events/${eventId}/responses?limit=500`);
+  },
+
+  // ── Schedule collisions (API only) ──────────────────────────────────────
+
+  /** Other groups' gatherings this one would overlap, before it's even saved. */
+  async checkCollisions(input: {
+    groupId: string;
+    startDateTime: string;
+    endDateTime?: string;
+    excludeEventId?: string;
+  }): Promise<EventCollision[]> {
+    requireApi('Schedule collisions');
+    return apiRequest<EventCollision[]>('/events/collisions', { method: 'POST', body: JSON.stringify(input) });
+  },
+
+  /** Asks each named leader which of the two clashing gatherings they'll be
+   * at. Returns how many were actually reached (some have no portal login). */
+  async notifyConflict(eventId: string, collidingEventId: string, memberIds: string[]): Promise<number> {
+    requireApi('Schedule collisions');
+    return apiRequest<number>('/events/notify-conflict', {
+      method: 'POST',
+      body: JSON.stringify({ eventId, collidingEventId, memberIds }),
+    });
   },
 };

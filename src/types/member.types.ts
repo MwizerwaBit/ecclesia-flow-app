@@ -220,10 +220,10 @@ export interface VisitorFollowUp {
   member: MemberListItem;
   daysSinceVisit: number;
   visitDate: string;
-  assignedToId?: string;
-  assignedToName?: string;
-  status: 'pending' | 'resolved';
-  notes?: string;
+  assignedToId?: string | null;
+  assignedToName?: string | null;
+  status: 'pending' | 'assigned' | 'resolved';
+  notes?: string | null;
 }
 
 export interface MemberSearchResult {

@@ -28,11 +28,11 @@ export function ChurchLandingPage() {
 
   const { data: events = [] } = useQuery({
     queryKey: ['events', 'public', slug],
-    queryFn: () => eventsService.list({ upcoming: true }),
+    queryFn: () => eventsService.publicEvents(slug),
     enabled: Boolean(church),
   });
 
-  const upcoming = events.filter((e) => e.isPublic && e.status === 'published').slice(0, 3);
+  const upcoming = events.slice(0, 3);
 
   if (isLoading) {
     return (
@@ -92,31 +92,38 @@ export function ChurchLandingPage() {
       ) : (
         <div className="space-y-3 mb-4">
           {upcoming.map((event) => (
-            <Card key={event.id} padding="md" variant="outline" className="flex items-center gap-3">
-              <div className="shrink-0 w-12 rounded-lg bg-primary-light dark:bg-primary/15 py-1.5 text-center">
-                <Text variant="caption" className="font-bold uppercase text-primary block">
-                  {formatDateShort(event.startDateTime).split(' ')[0]}
-                </Text>
-                <Text variant="h3" className="text-primary leading-none">
-                  {new Date(event.startDateTime).getDate()}
-                </Text>
-              </div>
-              <div className="min-w-0 flex-1">
-                <Text variant="body" className="font-medium truncate">
-                  {event.title}
-                </Text>
-                <Text variant="caption" color="muted">
-                  {formatTime(event.startDateTime)}
-                </Text>
-              </div>
-            </Card>
+            <Link key={event.id} to={`/c/${slug}/events/${event.id}`}>
+              <Card padding="md" variant="outline" className="flex items-center gap-3 hover:border-primary/40 transition-colors">
+                <div className="shrink-0 w-12 rounded-lg bg-primary-light dark:bg-primary/15 py-1.5 text-center">
+                  <Text variant="caption" className="font-bold uppercase text-primary block">
+                    {formatDateShort(event.startDateTime).split(' ')[0]}
+                  </Text>
+                  <Text variant="h3" className="text-primary leading-none">
+                    {new Date(event.startDateTime).getDate()}
+                  </Text>
+                </div>
+                <div className="min-w-0 flex-1">
+                  <Text variant="body" className="font-medium truncate">
+                    {event.title}
+                  </Text>
+                  <Text variant="caption" color="muted">
+                    {formatTime(event.startDateTime)}
+                  </Text>
+                </div>
+              </Card>
+            </Link>
           ))}
         </div>
       )}
 
       <Link to={`/c/${slug}/calendar`}>
-        <Button variant="secondary" fullWidth rightIcon={ArrowRight} className="mb-8">
+        <Button variant="secondary" fullWidth rightIcon={ArrowRight} className="mb-3">
           View the full calendar
+        </Button>
+      </Link>
+      <Link to={`/c/${slug}/join`}>
+        <Button variant="primary" fullWidth className="mb-8">
+          Join this church
         </Button>
       </Link>
 
