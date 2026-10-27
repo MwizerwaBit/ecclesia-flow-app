@@ -33,6 +33,27 @@ export interface ReviewerOption {
   roleName: string;
 }
 
+export interface KeyParticipant {
+  memberId: string;
+  name: string;
+  roleName: string;
+  /** Which of the two groups in conflict they lead. */
+  groupName: string;
+}
+
+export interface EventCollision {
+  eventId: string;
+  eventTitle: string;
+  groupId: string;
+  groupName: string;
+  startDateTime: string;
+  endDateTime: string | null;
+  /** Shared group membership, not RSVPs — an approximation. */
+  affectedMemberCount: number;
+  /** Group leaders among the affected members. */
+  keyParticipants: KeyParticipant[];
+}
+
 export interface PublicEvent {
   id: string;
   title: string;
@@ -47,6 +68,51 @@ export interface PublicEvent {
   coverImageUrl: string | null;
   theme: EventTheme;
 }
+
+/** A custom registration question attached to an event. */
+export type RegistrationFieldType = 'text' | 'single_choice' | 'checkbox';
+
+export interface RegistrationField {
+  id: string;
+  label: string;
+  fieldType: RegistrationFieldType;
+  options: string[];
+  required: boolean;
+  position: number;
+}
+
+/** What's sent to replace a form — no id/position, the server assigns those
+ * from array order. */
+export interface RegistrationFieldDraft {
+  label: string;
+  fieldType: RegistrationFieldType;
+  options: string[];
+  required: boolean;
+}
+
+export interface PublicEventDetail extends PublicEvent {
+  registrationFields: RegistrationField[];
+}
+
+/** Answers are keyed by the field's label, not its id — see RegistrationField. */
+export type RegistrationAnswers = Record<string, string | string[]>;
+
+export interface EventRegistrationInput {
+  respondentName: string;
+  respondentEmail?: string;
+  respondentPhone?: string;
+  answers: RegistrationAnswers;
+}
+
+export interface EventRegistration {
+  id: string;
+  respondentName: string;
+  respondentEmail: string | null;
+  respondentPhone: string | null;
+  answers: RegistrationAnswers;
+  createdAt: string;
+}
+
 export type AttendanceMode = 'individual' | 'headcount';
 export type EventType = 'service' | 'meeting' | 'event' | 'prayer' | 'outreach' | 'other';
 

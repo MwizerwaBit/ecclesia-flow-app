@@ -183,7 +183,8 @@ export const MOCK_VISITOR_FOLLOWUPS: VisitorFollowUp[] = [
     member: MOCK_MEMBERS.find(m => m.id === 'm7')!,
     daysSinceVisit: 3,
     visitDate: '2024-10-17',
-    status: 'pending',
+    status: 'assigned',
+    assignedToId: 'u2',
     assignedToName: 'Pastor James King',
   },
   {
@@ -195,3 +196,19 @@ export const MOCK_VISITOR_FOLLOWUPS: VisitorFollowUp[] = [
     status: 'pending',
   },
 ];
+
+/** Follow-up assignment/resolution set after the page loads, keyed by member
+ * id — overrides the static rows above (or a freshly quick-added visitor,
+ * which starts with none of this). Mirrors the real API's behaviour, where
+ * these live on the member record itself. */
+export const MOCK_FOLLOWUP_OVERRIDES: Record<
+  string,
+  { assignedToId?: string | null; assignedToName?: string | null; resolvedAt?: string | null; note?: string | null }
+> = {};
+
+export function patchMockFollowup(
+  memberId: string,
+  patch: { assignedToId?: string | null; assignedToName?: string | null; resolvedAt?: string | null; note?: string | null },
+) {
+  MOCK_FOLLOWUP_OVERRIDES[memberId] = { ...MOCK_FOLLOWUP_OVERRIDES[memberId], ...patch };
+}

@@ -8,7 +8,7 @@
  */
 import { useQuery } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
-import { CalendarDays, CheckCircle2, Clock, MapPin, Pencil, Repeat, Users } from 'lucide-react';
+import { CalendarDays, CheckCircle2, Clock, ClipboardList, MapPin, Pencil, Repeat, Users } from 'lucide-react';
 import { eventsService } from '@/services/eventsService';
 import { DetailLayout } from '@/components/layout';
 import { Badge, Button, Card, Text } from '@/components/ui';
@@ -151,6 +151,11 @@ export function EventDetail() {
         <Link to={`/staff/attendance/headcount?eventId=${event.id}`}>
           <Button variant="secondary" fullWidth>
             Record headcount
+          </Button>
+        </Link>
+        <Link to={`/staff/events/${event.id}/responses`}>
+          <Button variant="secondary" fullWidth leftIcon={ClipboardList}>
+            Registration responses
           </Button>
         </Link>
         <Link to={`/staff/events/${event.id}/edit`}>
