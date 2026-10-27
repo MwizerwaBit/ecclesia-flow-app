@@ -2,17 +2,30 @@
  * @file App.tsx
  * @description Root component. Provides global context providers and mounts the router.
  */
-import { QueryClient } from '@tanstack/react-query';
+import { MutationCache, QueryClient } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
 import { RouterProvider } from 'react-router-dom';
 import { router } from '@/routes';
 import { useAuthStore } from '@/hooks/useAuthStore';
 import { DevRoleSwitcher } from '@/components/dev/DevRoleSwitcher';
-import { OfflineBanner } from '@/components/ui';
+import { OfflineBanner, Toaster } from '@/components/ui';
+import { toast } from '@/hooks/useToastStore';
+import { errorMessage } from '@/lib/errors';
 
 // Initialize React Query client
 const queryClient = new QueryClient({
+  // Every failed save, send or delete tells the person why, even on a screen
+  // that never thought to. A screen that explains the failure itself, next to
+  // the thing that failed, opts out with `meta: { inline: true }` so the same
+  // failure isn't reported twice. (A 401 is the session layer's to handle.)
+  mutationCache: new MutationCache({
+    onError: (error, _variables, _context, mutation) => {
+      if (mutation.meta?.inline) return;
+      if ((error as { status?: number }).status === 401) return;
+      toast.error(errorMessage(error));
+    },
+  }),
   defaultOptions: {
     queries: {
       retry: 1,
@@ -68,6 +81,7 @@ export function App() {
     >
       <OfflineBanner />
       <RouterProvider router={router} />
+      <Toaster />
       <DevRoleSwitcher />
     </PersistQueryClientProvider>
   );

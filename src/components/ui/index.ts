@@ -22,3 +22,4 @@ export * from './DataTable';
 export * from './Skeleton';
 export * from './MfaStepUpPrompt';
 export * from './OfflineBanner';
+export * from './Toaster';
