@@ -3,12 +3,16 @@
  * @description Multi-step onboarding flow for new organisations.
  */
 import { useEffect, useRef, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { Building2, Palette, Network, UserPlus, Calendar, CheckCircle2, ArrowRight, ArrowLeft } from 'lucide-react';
 import type { AuthSession } from '@/types';
 import { useAuthStore, useCurrentUser } from '@/hooks/useAuthStore';
-import { membersService } from '@/services/membersService';
-import { eventsService } from '@/services/eventsService';
+import { ApiError } from '@/services/adapter';
+import { toast } from '@/hooks/useToastStore';
+import { errorMessage } from '@/lib/errors';
+import { saveDrafts } from '@/lib/onboardingDrafts';
+import { applyDrafts } from './applyDrafts';
+import { CheckoutReturn } from './CheckoutReturn';
 import { Button, Input, Card, Text, Select } from '@/components/ui';
 
 // Step definitions
@@ -20,7 +24,15 @@ const STEPS = [
   { id: 'event', label: 'First Event', icon: Calendar },
 ];
 
+/** The wizard, or what happens after the payment page sends the person back. */
 export function OnboardingWizard() {
+  const [params] = useSearchParams();
+  const checkout = params.get('checkout');
+  if (checkout === 'success' || checkout === 'canceled') return <CheckoutReturn result={checkout} />;
+  return <WizardSteps />;
+}
+
+function WizardSteps() {
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
@@ -87,26 +99,27 @@ export function OnboardingWizard() {
       });
     }
 
-    // Both remaining steps are explicitly skippable — only act on them if
-    // the person actually filled something in.
-    if (formData.firstMemberName.trim()) {
-      const [firstName, ...rest] = formData.firstMemberName.trim().split(' ');
-      await membersService.create({
-        firstName,
-        lastName: rest.join(' ') || '—',
-        email: formData.firstMemberEmail.trim() || undefined,
-        status: 'active',
-      });
-    }
-    if (formData.firstEventName.trim() && formData.firstEventDate) {
-      await eventsService.create({
-        title: formData.firstEventName.trim(),
-        type: 'service',
-        startDateTime: formData.firstEventDate,
-        attendanceMode: 'individual',
-        isPublic: true,
-        status: 'published',
-      });
+    // Both remaining steps are explicitly skippable. They are saved as members
+    // and events, which a church can only hold once it is active. A brand-new
+    // church is pending until it pays, so in that case keep what was typed and
+    // go and pay; it is saved when the church comes back active.
+    const drafts = {
+      memberName: formData.firstMemberName,
+      memberEmail: formData.firstMemberEmail,
+      eventName: formData.firstEventName,
+      eventDate: formData.firstEventDate,
+    };
+    try {
+      await applyDrafts(drafts);
+    } catch (error) {
+      if (error instanceof ApiError && error.code === 'org_inactive') {
+        saveDrafts(drafts);
+        navigate('/onboarding/plan', { replace: true });
+        return;
+      }
+      toast.error(errorMessage(error));
+      setIsSubmitting(false);
+      return;
     }
 
     setIsSubmitting(false);

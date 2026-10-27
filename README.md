@@ -11,7 +11,6 @@ all authorization. This app only decides what to show.
 - **React 19** + **TypeScript**, built and served by **Vite** (a PWA: service worker and installable)
 - **Tailwind CSS 4** with design tokens in `src/design-system/`
 - **TanStack Query** for server state, **React Router 6** for routing
-- **React Hook Form** + **Zod** for forms and validation
 - **oxlint** for linting
 
 ## Getting started
@@ -75,6 +74,7 @@ Conventions worth knowing:
   camelCase at the boundary, holds the 15-minute access token in memory only,
   and refreshes it from an httpOnly cookie. A service that has no mock
   behaviour calls `requireApi(...)`.
+
 - **Modules.** Adding a screen means adding a route to `src/modules/registry.ts`
   with the permission it needs; navigation and gating follow from that.
 - **Permissions.** `useRole().can('members:update')` hides what a person can't

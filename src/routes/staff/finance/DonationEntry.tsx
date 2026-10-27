@@ -87,6 +87,7 @@ export function DonationEntry() {
   const parsedAmount = Number.parseFloat(amount);
 
   const createDonation = useMutation({
+    meta: { inline: true }, // this screen shows the failure itself
     mutationFn: (form: DonationEntryForm) => financeService.createDonation(batchId, form),
     onSuccess: (donation) => {
       const name = donation.memberName ?? donation.guestName ?? 'Unmatched envelope';

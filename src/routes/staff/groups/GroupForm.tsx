@@ -104,6 +104,7 @@ function GroupFormBody({ group }: { group?: GroupDetail }) {
   };
 
   const save = useMutation({
+    meta: { inline: true }, // this screen shows the failure itself
     mutationFn: () => (group ? groupsService.update(group.id, input) : groupsService.create(input)),
     onSuccess: async (saved) => {
       await Promise.all([
