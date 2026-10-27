@@ -11,7 +11,6 @@ all authorization. This app only decides what to show.
 - **React 19** + **TypeScript**, built and served by **Vite** (a PWA: service worker and installable)
 - **Tailwind CSS 4** with design tokens in `src/design-system/`
 - **TanStack Query** for server state, **React Router 6** for routing
-- Controlled forms with a small validation hook (`src/lib/validation.ts`); React Hook Form and Zod are installed but not used by the screens yet
 - **oxlint** for linting
 
 ## Getting started
@@ -75,14 +74,7 @@ Conventions worth knowing:
   camelCase at the boundary, holds the 15-minute access token in memory only,
   and refreshes it from an httpOnly cookie. A service that has no mock
   behaviour calls `requireApi(...)`.
-- **Feedback on every failure.** A failed mutation raises a toast automatically
-  (`App.tsx`), worded by `lib/errors.ts`, which names the rejected fields on a
-  422. A screen that explains the failure itself opts out with
-  `meta: { inline: true }`. Forms validate with `lib/validation.ts`
-  (`useFieldErrors`): messages appear when a field loses focus, update live, show
-  for every field on submit, and server-side field errors land under their input.
-  Don't disable a submit button to signal "invalid"; show why instead.
-  `RegisterScreen.tsx` is the reference.
+
 - **Modules.** Adding a screen means adding a route to `src/modules/registry.ts`
   with the permission it needs; navigation and gating follow from that.
 - **Permissions.** `useRole().can('members:update')` hides what a person can't
