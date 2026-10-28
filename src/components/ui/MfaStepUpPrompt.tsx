@@ -58,7 +58,7 @@ export function MfaStepUpPrompt({ description, onVerified, onCancel, confirmLabe
         </div>
       </div>
 
-      <Input
+      <Input autoComplete="one-time-code"
         label="Authenticator code"
         inputMode="numeric"
         maxLength={6}

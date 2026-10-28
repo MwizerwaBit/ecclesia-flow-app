@@ -103,7 +103,7 @@ export function ResetPassword() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          <Input
+          <Input autoComplete="new-password"
             label="New Password"
             type="password"
             placeholder="••••••••"
@@ -113,7 +113,7 @@ export function ResetPassword() {
             required
           />
 
-          <Input
+          <Input autoComplete="new-password"
             label="Confirm New Password"
             type="password"
             placeholder="••••••••"

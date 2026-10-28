@@ -14,7 +14,7 @@ import { HeartHandshake, MapPin } from 'lucide-react';
 import { authService } from '@/services/authService';
 import { churchDirectoryService } from '@/services/churchDirectoryService';
 import { authErrorMessage, useAuthStore } from '@/hooks/useAuthStore';
-import { Button, Card, Checkbox, EmptyState, Input, Select, Skeleton, Text } from '@/components/ui';
+import { Button, Card, Checkbox, EmptyState, Input, Select, Skeleton, Text, TitleSelect } from '@/components/ui';
 import { cn } from '@/lib/cn';
 
 const RULES: Array<{ label: string; test: (p: string) => boolean }> = [
@@ -45,6 +45,7 @@ export function JoinChurch() {
     enabled: Boolean(slug),
   });
 
+  const [title, setTitle] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -81,6 +82,7 @@ export function JoinChurch() {
     try {
       const session = await authService.joinChurch({
         churchSlug: slug,
+        title: title.trim() || undefined,
         firstName,
         lastName,
         email,
@@ -148,9 +150,10 @@ export function JoinChurch() {
         </div>
 
         <form className="space-y-4" onSubmit={handleSubmit}>
+          <TitleSelect label="Title (optional)" autoComplete="honorific-prefix" value={title} onChange={setTitle} />
           <div className="grid grid-cols-2 gap-3">
-            <Input label="First name" autoFocus value={firstName} onChange={(e) => setFirstName(e.target.value)} />
-            <Input label="Last name" value={lastName} onChange={(e) => setLastName(e.target.value)} />
+            <Input autoComplete="given-name" label="First name" autoFocus value={firstName} onChange={(e) => setFirstName(e.target.value)} />
+            <Input autoComplete="family-name" label="Last name" value={lastName} onChange={(e) => setLastName(e.target.value)} />
           </div>
           <Input label="Email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
           <Input
@@ -202,7 +205,7 @@ export function JoinChurch() {
                 { value: 'other', label: 'Other' },
               ]}
             />
-            <Input label="ID number" value={nationalId} onChange={(e) => setNationalId(e.target.value)} />
+            <Input autoComplete="off" label="ID number" value={nationalId} onChange={(e) => setNationalId(e.target.value)} />
           </div>
 
           <div className="space-y-2 pt-1">

@@ -68,6 +68,8 @@ export interface GroupCandidate {
 
 export interface JoinChurchPayload {
   churchSlug: string;
+  /** Optional form of address: Mr, Dr, Rev, Fr, Prophet… */
+  title?: string;
   firstName: string;
   lastName: string;
   email: string;

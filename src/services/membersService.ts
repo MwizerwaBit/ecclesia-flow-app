@@ -40,6 +40,7 @@ export function toListItem(member: MemberDetail, data: PeopleData): MemberListIt
 
   return {
     id: member.id,
+    title: member.title,
     firstName: member.firstName,
     lastName: member.lastName,
     preferredName: member.preferredName,

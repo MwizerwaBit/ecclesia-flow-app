@@ -7,7 +7,7 @@ import { Outlet, Navigate, useLocation } from 'react-router-dom';
 import { BarChart, Globe, Network, Plus, Settings } from 'lucide-react';
 import { useRole } from '@/hooks/useRole';
 import { useCurrentUser } from '@/hooks/useAuthStore';
-import { SideNav, TopHeader, NavDrawer, TopBar } from '@/components/layout';
+import { SideNav, TopHeader, NavDrawer, TopBar, PageGuide, UserMenu } from '@/components/layout';
 
 const SIDEBAR_SECTIONS = [
   {
@@ -64,6 +64,8 @@ export function BoardLayout() {
         orgName="Diocese of Grace"
         brandSubtitle="Network administration"
         user={signedInAs}
+        profileHref="/board/account"
+        loginPath="/login"
         primaryAction={{ label: 'Add unit', href: '/board/hierarchy', icon: Plus }}
       />
       
@@ -72,14 +74,16 @@ export function BoardLayout() {
           <TopHeader 
             title="Network Admin"
             leftAction="menu"
-            onMenuClick={() => setMenuOpen(true)} 
+            onMenuClick={() => setMenuOpen(true)}
+            rightActions={[<UserMenu key="account" user={signedInAs} profileHref="/board/account" loginPath="/login" display="avatar" />]}
           />
         </div>
 
-        <TopBar user={signedInAs} notificationCount={1} />
+        <TopBar user={signedInAs} profileHref="/board/account" loginPath="/login" notificationCount={1} />
 
         <div className="flex-1 overflow-y-auto">
           <Outlet />
+          <PageGuide />
         </div>
       </div>
 
@@ -87,6 +91,9 @@ export function BoardLayout() {
         open={isMenuOpen}
         onClose={() => setMenuOpen(false)}
         sections={SIDEBAR_SECTIONS}
+        user={signedInAs}
+        profileHref="/board/account"
+        loginPath="/login"
       />
     </div>
   );

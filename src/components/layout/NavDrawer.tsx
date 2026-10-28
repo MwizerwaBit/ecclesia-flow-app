@@ -10,16 +10,21 @@
  */
 import { useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
-import { X } from 'lucide-react';
+import { Lock, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { Text } from '@/components/ui';
 import type { NavSection } from './SideNav';
+import { UserMenuLinks, type UserMenuUser } from './UserMenu';
 
 interface NavDrawerProps {
   open: boolean;
   onClose: () => void;
   sections: NavSection[];
   orgName?: string;
+  /** When given, the drawer ends with the person's profile and a sign-out. */
+  user?: UserMenuUser;
+  profileHref?: string;
+  loginPath?: string;
   /** Platform admin runs dark chrome so it is never mistaken for a tenant. */
   variant?: 'default' | 'platform';
 }
@@ -29,6 +34,9 @@ export function NavDrawer({
   onClose,
   sections,
   orgName,
+  user,
+  profileHref,
+  loginPath,
   variant = 'default',
 }: NavDrawerProps) {
   // Escape to close, and hold the background still while the panel is open.
@@ -107,7 +115,7 @@ export function NavDrawer({
 
               {section.items.map((item) => (
                 <NavLink
-                  key={item.href}
+                  key={`${item.href}:${item.label}`}
                   to={item.href}
                   end={item.href.split('/').length <= 2}
                   onClick={onClose}
@@ -115,6 +123,7 @@ export function NavDrawer({
                     cn(
                       // 44px minimum row height — this is the primary nav on touch.
                       'flex items-center gap-3 px-3 py-2.5 min-h-11 rounded-lg transition-colors',
+                      item.locked && 'opacity-50',
                       isActive
                         ? isPlatform
                           ? 'bg-platform-accent/20 text-white'
@@ -134,6 +143,7 @@ export function NavDrawer({
                       >
                         {item.label}
                       </Text>
+                      {item.locked && <Lock size={15} className="shrink-0" aria-label="Locked" />}
                       {!!item.badgeCount && (
                         <span className="bg-danger text-white text-caption font-bold px-1.5 py-0.5 rounded-full">
                           {item.badgeCount > 99 ? '99+' : item.badgeCount}
@@ -146,6 +156,10 @@ export function NavDrawer({
             </div>
           ))}
         </nav>
+
+        {user && profileHref && (
+          <UserMenuLinks user={user} profileHref={profileHref} loginPath={loginPath} variant={variant} onNavigate={onClose} />
+        )}
       </div>
     </div>
   );
