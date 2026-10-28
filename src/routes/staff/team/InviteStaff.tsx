@@ -51,6 +51,7 @@ export function InviteStaff() {
     .filter((p) => p.sensitive);
 
   const invite = useMutation({
+    meta: { inline: true }, // this screen shows the failure itself
     mutationFn: () =>
       teamService.invite({
         email: email.trim(),

@@ -89,6 +89,7 @@ const onboardingRoutes = {
   path: '/',
   children: [
     { path: 'onboarding/complete', lazy: screen(() => import('./onboarding/WizardComplete'), 'WizardComplete') },
+    { path: 'onboarding/plan', lazy: screen(() => import('./onboarding/PlanPicker'), 'PlanPicker') },
     // Checkout is part of onboarding (and plan changes): full-page, no app chrome.
     { path: 'billing/checkout/:sessionId', lazy: screen(() => import('./billing/DemoCheckout'), 'DemoCheckout') },
     {

@@ -240,6 +240,7 @@ function RegistrationWizard({ member }: { member?: MemberDetail }) {
   }
 
   const save = useMutation({
+    meta: { inline: true }, // this screen shows the failure itself
     mutationFn: () => {
       const payload = toPayload(form, { isEditing, existingConsentAt: member?.consent?.dataProcessingAt });
       if (member) {
