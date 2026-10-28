@@ -3,9 +3,12 @@
  * @description Layout for SaaS Platform Admins. Distinct dark theme to prevent confusion.
  */
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { paymentsService } from '@/services/paymentsService';
 import { Outlet, Navigate, useLocation } from 'react-router-dom';
 import {
   Activity,
+  Banknote,
   Building2,
   Database,
   Eye,
@@ -18,7 +21,7 @@ import {
 } from 'lucide-react';
 import { useRole } from '@/hooks/useRole';
 import { useCurrentUser } from '@/hooks/useAuthStore';
-import { SideNav, TopHeader, NavDrawer, TopBar } from '@/components/layout';
+import { SideNav, TopHeader, NavDrawer, TopBar, PageGuide, UserMenu } from '@/components/layout';
 
 const SIDEBAR_SECTIONS = [
   {
@@ -37,6 +40,7 @@ const SIDEBAR_SECTIONS = [
   {
     title: 'Business',
     items: [
+      { label: 'Payments', href: '/platform/payments', icon: Banknote },
       { label: 'Metrics', href: '/platform/metrics', icon: TrendingUp },
       { label: 'Announcements', href: '/platform/announcements', icon: Megaphone },
     ]
@@ -57,6 +61,17 @@ export function PlatformLayout() {
   const location = useLocation();
   const user = useCurrentUser();
   const [isMenuOpen, setMenuOpen] = useState(false);
+  // Payments waiting for approval, shown on the nav item so nothing sits unseen.
+  const { data: waiting = 0 } = useQuery({
+    queryKey: ['platform', 'payments', 'pending-count'],
+    queryFn: () => paymentsService.pendingCount(),
+    enabled: isAuthenticated && isPlatformAdmin,
+    refetchInterval: 60_000,
+  });
+  const sections = SIDEBAR_SECTIONS.map((section) => ({
+    ...section,
+    items: section.items.map((item) => (item.href === '/platform/payments' ? { ...item, badgeCount: waiting } : item)),
+  }));
 
   if (!isAuthenticated) {
     return <Navigate to="/platform/login" state={{ from: location }} replace />;
@@ -76,10 +91,12 @@ export function PlatformLayout() {
   return (
     <div className="flex min-h-screen bg-slate-950 text-slate-100 dark">
       <SideNav
-        sections={SIDEBAR_SECTIONS}
+        sections={sections}
         orgName="EcclesiaFlow"
         brandSubtitle="Platform"
         user={signedInAs}
+        profileHref="/platform/account"
+        loginPath="/platform/login"
         primaryAction={{ label: 'Register org', href: '/platform/orgs/new', icon: Plus }}
         variant="platform"
       />
@@ -89,22 +106,27 @@ export function PlatformLayout() {
           <TopHeader 
             title="Platform Admin"
             leftAction="menu"
-            onMenuClick={() => setMenuOpen(true)} 
+            onMenuClick={() => setMenuOpen(true)}
+            rightActions={[<UserMenu key="account" user={signedInAs} profileHref="/platform/account" loginPath="/platform/login" display="avatar" variant="platform" />]}
           />
         </div>
 
-        <TopBar user={signedInAs} notificationCount={1} variant="platform" />
+        <TopBar user={signedInAs} profileHref="/platform/account" loginPath="/platform/login" notificationCount={1} variant="platform" />
 
         <div className="flex-1 overflow-y-auto">
           <Outlet />
+          <PageGuide />
         </div>
       </div>
 
       <NavDrawer
         open={isMenuOpen}
         onClose={() => setMenuOpen(false)}
-        sections={SIDEBAR_SECTIONS}
+        sections={sections}
         orgName="EcclesiaFlow Admin"
+        user={signedInAs}
+        profileHref="/platform/account"
+        loginPath="/platform/login"
         variant="platform"
       />
     </div>

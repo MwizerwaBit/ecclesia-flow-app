@@ -101,6 +101,7 @@ export interface Plan {
   maxMembers: number | null;
   modules: string[];
   purchasable: boolean;
+  currency: string;
 }
 
 export interface CheckoutSession {
@@ -126,13 +127,75 @@ export interface Payment {
   paidAt: string | null;
 }
 
+/**
+ * What a church may do right now, worked out by the API from dates:
+ * full (paid), basics (free modules only, inside the grace days), view_only
+ * (nothing can be changed), or stopped by the platform.
+ */
+export interface Access {
+  state: 'full' | 'basics' | 'view_only' | 'suspended' | 'closed';
+  tier: OrgTier | 'free';
+  canWrite: boolean;
+  periodEnd: string | null;
+  graceEndsAt: string | null;
+  daysLeft: number | null;
+  renewalDue: boolean;
+  /** A payment was reported and is waiting for approval. */
+  paymentPending: boolean;
+}
+
+export type ManualPaymentStatus = 'pending' | 'approved' | 'rejected';
+
+/** A mobile-money payment a church has reported, waiting for (or past) approval. */
+export interface ManualPayment {
+  id: string;
+  tier: OrgTier;
+  months: number;
+  amountCents: number;
+  currency: string;
+  referenceCode: string;
+  senderName: string;
+  sentAmountCents: number;
+  momoTransactionId: string | null;
+  status: ManualPaymentStatus;
+  submittedAt: string;
+  decidedAt: string | null;
+  decisionNote: string | null;
+  grantedUntil: string | null;
+}
+
+/** The platform admin's view of the same payment. */
+export interface ManualPaymentAdmin extends ManualPayment {
+  tenantId: string;
+  churchName: string;
+  churchEmail: string | null;
+  proofMimeType: string;
+  amountMatches: boolean;
+  wouldGrantUntil: string | null;
+  currentPeriodEnd: string | null;
+}
+
+export interface PaymentInstructions {
+  network: string;
+  number: string;
+  accountName: string;
+  tier: OrgTier;
+  planName: string;
+  months: number;
+  amountCents: number;
+  currency: string;
+}
+
 export interface BillingOverview {
-  provider: 'demo' | 'stripe';
+  provider: 'demo' | 'stripe' | 'manual';
   publishableKey: string | null;
   orgStatus: OrgLifecycleStatus;
   tier: OrgTier;
   subscription: Subscription | null;
   payments: Payment[];
+  access: Access | null;
+  pendingPayment: ManualPayment | null;
+  lastPayment: ManualPayment | null;
 }
 
 export interface DemoCheckout {

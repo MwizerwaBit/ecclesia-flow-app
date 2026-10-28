@@ -19,11 +19,17 @@ export function buildStaffNav(
   modules: ResolvedModule[],
   can: (permission: string) => boolean,
   base = '/staff',
+  /** True while the church isn't paid up: modules it would have show greyed out, opening Billing. */
+  showLocked = false,
 ): NavSection[] {
   const bySection = new Map<string, NavSection['items']>();
 
   for (const module of modules) {
-    if (!module.enabled || !module.nav) continue;
+    if (!module.nav) continue;
+    // A module off because of the plan is greyed out while unpaid; one switched
+    // off on purpose stays hidden.
+    const locked = !module.enabled;
+    if (locked && !(showLocked && module.reason === 'tier-too-low')) continue;
 
     for (const item of module.nav) {
       if (item.permission && !can(item.permission)) continue;
@@ -31,7 +37,12 @@ export function buildStaffNav(
       const section = item.section ?? module.name;
       bySection.set(section, [
         ...(bySection.get(section) ?? []),
-        { label: item.label, href: `${base}/${item.path}`, icon: item.icon },
+        {
+          label: item.label,
+          href: locked ? `${base}/settings/billing` : `${base}/${item.path}`,
+          icon: item.icon,
+          locked,
+        },
       ]);
     }
   }

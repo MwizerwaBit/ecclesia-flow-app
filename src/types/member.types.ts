@@ -79,6 +79,8 @@ export interface Member {
 
 export interface MemberListItem {
   id: string;
+  /** Mr, Dr, Rev, Fr, Prophet… */
+  title?: string;
   firstName: string;
   lastName: string;
   preferredName?: string;

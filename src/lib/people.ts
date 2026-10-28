@@ -67,7 +67,42 @@ export const HOUSEHOLD_ROLE_LABELS: Record<HouseholdRole, string> = {
   other: 'Other',
 };
 
-export const TITLE_OPTIONS = ['Mr', 'Mrs', 'Ms', 'Miss', 'Dr', 'Rev', 'Pastor', 'Prof'];
+/**
+ * Forms of address, stored in their short form ("Rev", "Fr", "Ev") and shown
+ * beside the name. Grouped the way people think of them; anything not here goes
+ * in as "Other" (see TitleSelect).
+ */
+export const TITLES: Array<{ value: string; meaning: string }> = [
+  { value: 'Mr', meaning: 'Mister' },
+  { value: 'Mrs', meaning: 'Missus' },
+  { value: 'Ms', meaning: 'Ms' },
+  { value: 'Miss', meaning: 'Miss' },
+  { value: 'Mx', meaning: 'Mx' },
+  { value: 'Dr', meaning: 'Doctor' },
+  { value: 'Prof', meaning: 'Professor' },
+  { value: 'Eng', meaning: 'Engineer' },
+  { value: 'Hon', meaning: 'Honourable' },
+  { value: 'Rev', meaning: 'Reverend' },
+  { value: 'Rev Dr', meaning: 'Reverend Doctor' },
+  { value: 'Fr', meaning: 'Father' },
+  { value: 'Sr', meaning: 'Sister (religious)' },
+  { value: 'Br', meaning: 'Brother (religious)' },
+  { value: 'Pastor', meaning: 'Pastor' },
+  { value: 'Ps', meaning: 'Pastor (short)' },
+  { value: 'Ev', meaning: 'Evangelist' },
+  { value: 'Prophet', meaning: 'Prophet' },
+  { value: 'Prophetess', meaning: 'Prophetess' },
+  { value: 'Apostle', meaning: 'Apostle' },
+  { value: 'Bishop', meaning: 'Bishop' },
+  { value: 'Archbishop', meaning: 'Archbishop' },
+  { value: 'Canon', meaning: 'Canon' },
+  { value: 'Elder', meaning: 'Elder' },
+  { value: 'Deacon', meaning: 'Deacon' },
+  { value: 'Deaconess', meaning: 'Deaconess' },
+  { value: 'Minister', meaning: 'Minister' },
+];
+
+export const TITLE_OPTIONS = TITLES.map((t) => t.value);
 
 export const GROUP_TYPE_LABELS: Record<GroupType, string> = {
   ministry: 'Ministry',
@@ -138,6 +173,7 @@ export function normalisePhone(phone?: string): string {
   return (phone ?? '').replace(/\D/g, '');
 }
 
-export function fullName(person: { firstName: string; lastName: string; preferredName?: string }): string {
-  return `${person.preferredName || person.firstName} ${person.lastName}`.trim();
+/** "Rev Grace Mukamana": the title, if they have one, then the name they go by. */
+export function fullName(person: { title?: string; firstName: string; lastName: string; preferredName?: string }): string {
+  return [person.title, person.preferredName || person.firstName, person.lastName].filter(Boolean).join(' ').trim();
 }

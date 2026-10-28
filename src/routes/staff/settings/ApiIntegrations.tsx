@@ -228,7 +228,7 @@ export function ApiIntegrations() {
             </Button>
           }
         >
-          <Input
+          <Input type="url"
             label="Endpoint URL"
             autoFocus
             placeholder="https://yourchurch.org/hooks/ecclesiaflow"

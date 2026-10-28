@@ -11,7 +11,8 @@ import { useRole } from '@/hooks/useRole';
 import { useCurrentUser } from '@/hooks/useAuthStore';
 import { useModules } from '@/modules/useModules';
 import { buildStaffNav } from '@/modules/nav';
-import { SideNav, BottomTabBar, NavDrawer, TopBar, TopHeader } from '@/components/layout';
+import { BillingBanner, SideNav, BottomTabBar, NavDrawer, TopBar, TopHeader, PageGuide, UserMenu } from '@/components/layout';
+import { useAccess } from '@/hooks/useAccess';
 
 
 /** Ordered longest-first; the first matching prefix names the screen. */
@@ -58,6 +59,7 @@ export function StaffLayout() {
   const { isStaff, isAuthenticated, isBoard, can } = useRole();
   const user = useCurrentUser();
   const { modules: allModules } = useModules();
+  const { isLapsed } = useAccess();
   const location = useLocation();
   const [isMenuOpen, setMenuOpen] = useState(false);
 
@@ -73,7 +75,7 @@ export function StaffLayout() {
   // The sidebar is derived, not declared: a module the church has not
   // subscribed to contributes nothing, and neither does one this role cannot
   // reach. Adding a module to the registry puts it here automatically.
-  const sections = buildStaffNav(allModules, can);
+  const sections = buildStaffNav(allModules, can, '/staff', isLapsed);
 
   // Longest prefix wins, so /staff/finance/batches resolves before /staff/finance.
   // The words here match what each screen calls itself and what the nav calls it —
@@ -100,6 +102,8 @@ export function StaffLayout() {
         orgName={user?.tenantName ?? 'EcclesiaFlow'}
         brandSubtitle="Church management"
         user={signedInAs}
+        profileHref="/staff/account"
+        loginPath="/login"
         primaryAction={{ label: 'Add member', href: '/staff/members/add', icon: UserPlus }}
       />
 
@@ -110,15 +114,18 @@ export function StaffLayout() {
             title={getRouteTitle()}
             leftAction="menu"
             onMenuClick={() => setMenuOpen(true)}
+            rightActions={[<UserMenu key="account" user={signedInAs} profileHref="/staff/account" loginPath="/login" display="avatar" />]}
           />
         </div>
 
-        <TopBar user={signedInAs} notificationCount={2} />
+        <TopBar user={signedInAs} profileHref="/staff/account" loginPath="/login" notificationCount={2} />
 
         {/* The tab bar is fixed over this column, so the column reserves
             room for it. Screens inside do not repeat this. */}
         <div className="flex-1 overflow-y-auto pb-tab-content-pb lg:pb-0">
+          <BillingBanner />
           <Outlet />
+          <PageGuide />
         </div>
 
         <BottomTabBar items={MOBILE_TABS} />
@@ -129,6 +136,9 @@ export function StaffLayout() {
         onClose={() => setMenuOpen(false)}
         sections={sections}
         orgName={user?.tenantName}
+        user={signedInAs}
+        profileHref="/staff/account"
+        loginPath="/login"
       />
     </div>
   );

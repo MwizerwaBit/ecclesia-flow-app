@@ -91,6 +91,7 @@ const onboardingRoutes = {
     { path: 'onboarding/complete', lazy: screen(() => import('./onboarding/WizardComplete'), 'WizardComplete') },
     { path: 'onboarding/plan', lazy: screen(() => import('./onboarding/PlanPicker'), 'PlanPicker') },
     // Checkout is part of onboarding (and plan changes): full-page, no app chrome.
+    { path: 'billing/pay', lazy: screen(() => import('./billing/ManualPayment'), 'ManualPayment') },
     { path: 'billing/checkout/:sessionId', lazy: screen(() => import('./billing/DemoCheckout'), 'DemoCheckout') },
     {
       path: 'onboarding',
@@ -128,6 +129,7 @@ const staffRoutes = {
   element: <StaffLayout />,
   children: [
     { path: 'dashboard', lazy: screen(() => import('./staff/StaffDashboard'), 'StaffDashboard') },
+    { path: 'account', lazy: screen(() => import('./account/MyAccount'), 'MyAccount') },
 
     // Everything else on this surface comes from the module registry, so a
     // module is added by editing src/modules/registry.ts and nothing here.
@@ -141,6 +143,7 @@ const boardRoutes = {
   element: <BoardLayout />,
   children: [
     { path: 'dashboard', lazy: screen(() => import('./board/NetworkDashboard'), 'NetworkDashboard') },
+    { path: 'account', lazy: screen(() => import('./account/MyAccount'), 'MyAccount') },
     { path: 'hierarchy', lazy: screen(() => import('./staff/hierarchy/HierarchyTreeView'), 'HierarchyTreeView') },
     { path: 'units/:id', lazy: screen(() => import('./staff/hierarchy/UnitDetail'), 'UnitDetail') },
     { path: 'organisations', lazy: screen(() => import('./platform/OrganisationsList'), 'OrganisationsList') },
@@ -158,6 +161,7 @@ const platformRoutes = {
   children: [
     { path: 'login', lazy: screen(() => import('./platform/PlatformLogin'), 'PlatformLogin') },
     { path: 'dashboard', lazy: screen(() => import('./platform/PlatformDashboard'), 'PlatformDashboard') },
+    { path: 'account', lazy: screen(() => import('./account/MyAccount'), 'MyAccount') },
 
     // Organisations — 'new' before ':id' so it is not read as an id
     { path: 'orgs', lazy: screen(() => import('./platform/OrganisationsList'), 'OrganisationsList') },
@@ -168,6 +172,7 @@ const platformRoutes = {
 
     { path: 'impersonate', lazy: screen(() => import('./platform/Impersonation'), 'Impersonation') },
     { path: 'announcements', lazy: screen(() => import('./platform/PlatformAnnouncements'), 'PlatformAnnouncements') },
+    { path: 'payments', lazy: screen(() => import('./platform/PaymentApprovals'), 'PaymentApprovals') },
     { path: 'audit-log', lazy: screen(() => import('./platform/PlatformAuditLog'), 'PlatformAuditLog') },
     { path: 'metrics', lazy: screen(() => import('./platform/PlatformMetrics'), 'PlatformMetrics') },
     { path: 'system-health', lazy: screen(() => import('./platform/SystemHealth'), 'SystemHealth') },

@@ -78,7 +78,7 @@ export function ContactDemo() {
         onChange={(e) => setEmail(e.target.value)}
       />
 
-      <Input
+      <Input autoComplete="organization"
         label="Church or organisation"
         value={organisation}
         onChange={(e) => setOrganisation(e.target.value)}
