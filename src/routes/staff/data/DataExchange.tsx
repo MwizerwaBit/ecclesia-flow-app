@@ -115,7 +115,7 @@ function ImportPanel({ dataset }: { dataset: Dataset }) {
           e.target.value = '';
         }}
       />
-      <Button variant="outline" onClick={() => input.current?.click()} isLoading={check.isPending}>
+      <Button variant="secondary" onClick={() => input.current?.click()} isLoading={check.isPending}>
         <Upload size={16} aria-hidden /> {file ? 'Choose a different file' : 'Choose a CSV file'}
       </Button>
       {file && <Text variant="body-sm" color="muted">{file.name}</Text>}
@@ -218,12 +218,12 @@ function DatasetSection({ dataset }: { dataset: Dataset }) {
 
         <div className="flex flex-wrap gap-2">
           {dataset.canImport && (
-            <Button variant="outline" onClick={() => download.mutate('template')} isLoading={download.isPending && download.variables === 'template'}>
+            <Button variant="secondary" onClick={() => download.mutate('template')} isLoading={download.isPending && download.variables === 'template'}>
               <Download size={16} aria-hidden /> Empty template
             </Button>
           )}
           {dataset.canExport && (
-            <Button variant="outline" onClick={() => download.mutate('export')} isLoading={download.isPending && download.variables === 'export'}>
+            <Button variant="secondary" onClick={() => download.mutate('export')} isLoading={download.isPending && download.variables === 'export'}>
               <Download size={16} aria-hidden /> Export current data
             </Button>
           )}

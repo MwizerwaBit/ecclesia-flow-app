@@ -62,7 +62,7 @@ function ReportView({ report }: { report: ReportInfo }) {
               className="w-44"
             />
           ))}
-          <Button type="submit" variant="outline">Apply</Button>
+          <Button type="submit" variant="secondary">Apply</Button>
         </form>
       )}
 
@@ -93,7 +93,7 @@ function ReportView({ report }: { report: ReportInfo }) {
         </div>
       )}
 
-      <Button variant="outline" onClick={() => download.mutate()} isLoading={download.isPending} disabled={!result.data}>
+      <Button variant="secondary" onClick={() => download.mutate()} isLoading={download.isPending} disabled={!result.data}>
         <Download size={16} aria-hidden /> Download as spreadsheet
       </Button>
     </Card>
