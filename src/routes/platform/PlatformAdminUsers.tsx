@@ -215,7 +215,7 @@ export function PlatformAdminUsers() {
           }
         >
           <div className="space-y-4">
-            <Input
+            <Input autoComplete="off"
               label="Email"
               type="email"
               autoFocus

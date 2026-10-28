@@ -71,7 +71,7 @@ export function WhiteLabelSettings() {
         </div>
 
         <Card padding="md" className="space-y-4">
-          <Input
+          <Input inputMode="url" autoCapitalize="none" spellCheck={false}
             label="Portal domain"
             value={customDomain}
             onChange={(e) => setCustomDomain(e.target.value)}

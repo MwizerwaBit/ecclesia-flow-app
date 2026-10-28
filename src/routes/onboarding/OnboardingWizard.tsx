@@ -134,7 +134,7 @@ function WizardSteps() {
         return (
           <div className="space-y-4 animate-fade-in">
             <Text variant="h2" className="mb-4">Tell us about your church</Text>
-            <Input 
+            <Input autoComplete="organization" 
               label="Organisation Name" 
               placeholder="e.g. St. Jude's Cathedral"
               value={formData.orgName}
@@ -214,13 +214,13 @@ function WizardSteps() {
               You're already set up as the account leading this workspace — this starts the
               directory with someone else. Skip it for now if you'd rather import people later.
             </Text>
-            <Input 
+            <Input autoComplete="off" 
               label="Full Name" 
               placeholder="e.g. John Doe"
               value={formData.firstMemberName}
               onChange={(e) => updateForm('firstMemberName', e.target.value)}
             />
-            <Input 
+            <Input autoComplete="off" 
               label="Email Address" 
               type="email"
               placeholder="john@example.com"

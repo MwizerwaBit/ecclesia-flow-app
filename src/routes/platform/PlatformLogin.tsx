@@ -76,7 +76,7 @@ export function PlatformLogin() {
                 </Text>
               </div>
 
-              <Input
+              <Input autoComplete="one-time-code"
                 label="Authentication code"
                 inputMode="numeric"
                 autoFocus

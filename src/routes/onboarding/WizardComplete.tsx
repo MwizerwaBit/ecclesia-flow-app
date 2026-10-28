@@ -12,6 +12,7 @@ import { ArrowRight, Check, Share2 } from 'lucide-react';
 import { Button, Card, Text } from '@/components/ui';
 
 const NEXT_STEPS = [
+  { label: 'Choose a plan and unlock everything', href: '/onboarding/plan' },
   { label: 'Add the rest of your members', href: '/staff/members/add' },
   { label: 'Put this Sunday on the calendar', href: '/staff/events/new' },
   { label: 'Invite your staff', href: '/staff/team/invite' },

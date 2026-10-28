@@ -44,7 +44,7 @@ import { groupsService } from '@/services/groupsService';
 import { commsService } from '@/services/commsService';
 import { currentTenantId } from '@/mocks/peopleStore';
 import { MediaPicker } from '@/components/media/MediaPicker';
-import { Avatar, Badge, Button, Card, Checkbox, Input, Select, Skeleton, Text } from '@/components/ui';
+import { Avatar, Badge, Button, Card, Checkbox, Input, Select, Skeleton, Text, TitleSelect } from '@/components/ui';
 import { cn } from '@/lib/cn';
 import { formatDate } from '@/lib/formatters';
 import {
@@ -55,7 +55,6 @@ import {
   JOIN_METHOD_LABELS,
   MARITAL_LABELS,
   STATUS_LABELS,
-  TITLE_OPTIONS,
   ageFrom,
   formatSchedule,
 } from '@/lib/people';
@@ -456,13 +455,8 @@ function RegistrationWizard({ member }: { member?: MemberDetail }) {
                   </Section>
 
                   <Section title="Name">
-                    <Select
-                      label="Title"
-                      value={form.title}
-                      onChange={(e) => set('title', e.target.value)}
-                      options={[{ value: '', label: 'None' }, ...TITLE_OPTIONS.map((t) => ({ value: t, label: t }))]}
-                    />
-                    <Input label="Preferred name" placeholder="What they like to be called" value={form.preferredName} onChange={(e) => set('preferredName', e.target.value)} />
+                    <TitleSelect value={form.title} onChange={(v) => set('title', v)} />
+                    <Input autoComplete="off" label="Preferred name" placeholder="What they like to be called" value={form.preferredName} onChange={(e) => set('preferredName', e.target.value)} />
                     <Input
                       label="First name *"
                       autoFocus={!isEditing}
@@ -492,7 +486,7 @@ function RegistrationWizard({ member }: { member?: MemberDetail }) {
                       onChange={(value) => set('gender', value)}
                       options={options(GENDER_LABELS)}
                     />
-                    <Input
+                    <Input autoComplete="off"
                       label="Date of birth"
                       type="date"
                       max={new Date().toISOString().slice(0, 10)}
@@ -506,8 +500,8 @@ function RegistrationWizard({ member }: { member?: MemberDetail }) {
                         {age} years old{minor ? ' — a parent or guardian will need to give consent.' : ''}
                       </Text>
                     )}
-                    <Input label="Occupation" value={form.occupation} onChange={(e) => set('occupation', e.target.value)} />
-                    <Input label="Employer or school" value={form.employer} onChange={(e) => set('employer', e.target.value)} />
+                    <Input autoComplete="off" label="Occupation" value={form.occupation} onChange={(e) => set('occupation', e.target.value)} />
+                    <Input autoComplete="off" label="Employer or school" value={form.employer} onChange={(e) => set('employer', e.target.value)} />
                   </Section>
                 </>
               )}
@@ -541,7 +535,7 @@ function RegistrationWizard({ member }: { member?: MemberDetail }) {
                         onChange={(e) => set('whatsappSameAsPhone', e.target.checked)}
                       />
                       {!form.whatsappSameAsPhone && (
-                        <Input label="WhatsApp number" type="tel" inputMode="tel" value={form.whatsapp} error={errors.whatsapp} onChange={(e) => set('whatsapp', e.target.value)} />
+                        <Input autoComplete="off" label="WhatsApp number" type="tel" inputMode="tel" value={form.whatsapp} error={errors.whatsapp} onChange={(e) => set('whatsapp', e.target.value)} />
                       )}
                     </div>
                     <Select
@@ -553,12 +547,12 @@ function RegistrationWizard({ member }: { member?: MemberDetail }) {
                   </Section>
 
                   <Section title="Home address">
-                    <Input label="Street address" value={form.addressLine1} error={errors.addressLine1} onChange={(e) => set('addressLine1', e.target.value)} className="sm:col-span-2" />
-                    <Input label="Apartment, estate or landmark" value={form.addressLine2} onChange={(e) => set('addressLine2', e.target.value)} className="sm:col-span-2" />
-                    <Input label="Town or city" value={form.city} error={errors.city} onChange={(e) => set('city', e.target.value)} />
-                    <Input label="District, state or province" value={form.state} onChange={(e) => set('state', e.target.value)} />
-                    <Input label="Postal code" value={form.postalCode} onChange={(e) => set('postalCode', e.target.value)} />
-                    <Input label="Country" value={form.country} onChange={(e) => set('country', e.target.value)} />
+                    <Input autoComplete="off" label="Street address" value={form.addressLine1} error={errors.addressLine1} onChange={(e) => set('addressLine1', e.target.value)} className="sm:col-span-2" />
+                    <Input autoComplete="off" label="Apartment, estate or landmark" value={form.addressLine2} onChange={(e) => set('addressLine2', e.target.value)} className="sm:col-span-2" />
+                    <Input autoComplete="off" label="Town or city" value={form.city} error={errors.city} onChange={(e) => set('city', e.target.value)} />
+                    <Input autoComplete="off" label="District, state or province" value={form.state} onChange={(e) => set('state', e.target.value)} />
+                    <Input autoComplete="off" label="Postal code" value={form.postalCode} onChange={(e) => set('postalCode', e.target.value)} />
+                    <Input autoComplete="off" label="Country" value={form.country} onChange={(e) => set('country', e.target.value)} />
                   </Section>
                 </>
               )}
@@ -579,12 +573,12 @@ function RegistrationWizard({ member }: { member?: MemberDetail }) {
                       onChange={(e) => set('unitId', e.target.value)}
                       options={[{ value: '', label: 'Not assigned yet' }, ...units.map((u) => ({ value: u.id, label: u.name }))]}
                     />
-                    <Input label="Joined on" type="date" max={new Date().toISOString().slice(0, 10)} value={form.joinedAt} error={errors.joinedAt} onChange={(e) => set('joinedAt', e.target.value)} />
+                    <Input autoComplete="off" label="Joined on" type="date" max={new Date().toISOString().slice(0, 10)} value={form.joinedAt} error={errors.joinedAt} onChange={(e) => set('joinedAt', e.target.value)} />
                     <Select label="How they joined" value={form.joinMethod} onChange={(e) => set('joinMethod', e.target.value as FormState['joinMethod'])} options={options(JOIN_METHOD_LABELS, 'Not recorded')} />
                     {form.joinMethod === 'transfer' && (
-                      <Input label="Previous church" value={form.previousChurch} onChange={(e) => set('previousChurch', e.target.value)} />
+                      <Input autoComplete="off" label="Previous church" value={form.previousChurch} onChange={(e) => set('previousChurch', e.target.value)} />
                     )}
-                    <Input label="Invited by" placeholder="Who brought them, if anyone" value={form.invitedBy} onChange={(e) => set('invitedBy', e.target.value)} />
+                    <Input autoComplete="off" label="Invited by" placeholder="Who brought them, if anyone" value={form.invitedBy} onChange={(e) => set('invitedBy', e.target.value)} />
                   </Section>
 
                   <Section title="Faith & giving">
@@ -598,12 +592,12 @@ function RegistrationWizard({ member }: { member?: MemberDetail }) {
                       ]}
                     />
                     {form.isBaptised === 'yes' ? (
-                      <Input label="Baptism date" type="date" value={form.baptismDate} error={errors.baptismDate} onChange={(e) => set('baptismDate', e.target.value)} />
+                      <Input autoComplete="off" label="Baptism date" type="date" value={form.baptismDate} error={errors.baptismDate} onChange={(e) => set('baptismDate', e.target.value)} />
                     ) : (
                       <div className="hidden sm:block" />
                     )}
                     <div className="space-y-1.5">
-                      <Input
+                      <Input autoComplete="off"
                         label="Envelope number"
                         inputMode="numeric"
                         value={form.envelopeNumber}
@@ -717,7 +711,7 @@ function RegistrationWizard({ member }: { member?: MemberDetail }) {
                       />
                     </div>
                     {form.householdMode === 'new' && (
-                      <Input label="Household name *" value={form.householdName} error={errors.householdName} onChange={(e) => set('householdName', e.target.value)} />
+                      <Input autoComplete="off" label="Household name *" value={form.householdName} error={errors.householdName} onChange={(e) => set('householdName', e.target.value)} />
                     )}
                     {form.householdMode === 'existing' && (
                       <Select
@@ -746,9 +740,9 @@ function RegistrationWizard({ member }: { member?: MemberDetail }) {
                   </Section>
 
                   <Section title={minor ? 'Parent or guardian / emergency contact' : 'Emergency contact'}>
-                    <Input label="Name" value={form.emergencyName} error={errors.emergencyName} onChange={(e) => set('emergencyName', e.target.value)} />
-                    <Input label="Phone" type="tel" inputMode="tel" value={form.emergencyPhone} error={errors.emergencyPhone} onChange={(e) => set('emergencyPhone', e.target.value)} />
-                    <Input label="Relationship" placeholder={minor ? 'Mother, father, guardian…' : 'Spouse, sibling, friend…'} value={form.emergencyRelationship} onChange={(e) => set('emergencyRelationship', e.target.value)} />
+                    <Input autoComplete="off" label="Name" value={form.emergencyName} error={errors.emergencyName} onChange={(e) => set('emergencyName', e.target.value)} />
+                    <Input autoComplete="off" label="Phone" type="tel" inputMode="tel" value={form.emergencyPhone} error={errors.emergencyPhone} onChange={(e) => set('emergencyPhone', e.target.value)} />
+                    <Input autoComplete="off" label="Relationship" placeholder={minor ? 'Mother, father, guardian…' : 'Spouse, sibling, friend…'} value={form.emergencyRelationship} onChange={(e) => set('emergencyRelationship', e.target.value)} />
                   </Section>
                 </>
               )}

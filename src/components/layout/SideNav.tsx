@@ -8,9 +8,10 @@
  * one primary action for this surface.
  */
 import { NavLink, Link } from 'react-router-dom';
-import type { LucideIcon } from 'lucide-react';
+import { Lock, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/cn';
-import { Avatar, Text } from '@/components/ui';
+import { Text } from '@/components/ui';
+import { UserMenu } from './UserMenu';
 
 export interface NavSection {
   title?: string;
@@ -19,6 +20,8 @@ export interface NavSection {
     href: string;
     icon: LucideIcon;
     badgeCount?: number;
+    /** Greyed out until the church pays; it still opens, on the billing page. */
+    locked?: boolean;
     /** When set, the item is only shown to sessions whose role grants this permission. */
     permission?: string;
   }>;
@@ -37,6 +40,9 @@ interface SideNavProps {
   /** Small caps line under the brand, e.g. the tenant or "Platform". */
   brandSubtitle?: string;
   user?: SideNavUser;
+  /** Where the account menu's "My profile" goes. */
+  profileHref?: string;
+  loginPath?: string;
   /** The single primary action for this surface, pinned above the user. */
   primaryAction?: { label: string; href: string; icon: LucideIcon };
   variant?: 'default' | 'platform';
@@ -47,6 +53,8 @@ export function SideNav({
   orgName,
   brandSubtitle,
   user,
+  profileHref,
+  loginPath,
   primaryAction,
   variant = 'default',
 }: SideNavProps) {
@@ -90,12 +98,14 @@ export function SideNav({
 
             {section.items.map((item) => (
               <NavLink
-                key={item.href}
+                key={`${item.href}:${item.label}`}
                 to={item.href}
                 end={item.href.split('/').length <= 2}
+                title={item.locked ? `${item.label} unlocks when your plan is paid` : undefined}
                 className={({ isActive }) =>
                   cn(
                     'flex items-center gap-3 px-3 rounded-lg transition-colors min-h-11',
+                    item.locked && 'opacity-50',
                     isActive
                       ? isPlatform
                         ? 'bg-platform-accent text-white'
@@ -112,6 +122,7 @@ export function SideNav({
                     <Text variant="body" className={cn('flex-1 truncate', isActive && 'font-medium')}>
                       {item.label}
                     </Text>
+                    {item.locked && <Lock size={14} className="shrink-0" aria-label="Locked" />}
                     {!!item.badgeCount && (
                       <span className="bg-danger text-white text-caption font-bold px-1.5 py-0.5 rounded-full">
                         {item.badgeCount > 99 ? '99+' : item.badgeCount}
@@ -147,23 +158,14 @@ export function SideNav({
           </Link>
         )}
 
-        {user && (
-          <div className="flex items-center gap-3 px-1">
-            <Avatar src={user.photoUrl} name={user.name} size="sm" className="shrink-0" />
-            <div className="min-w-0">
-              <Text
-                variant="body-sm"
-                className={cn('truncate font-medium', isPlatform && 'text-white')}
-              >
-                {user.name}
-              </Text>
-              {user.subtitle && (
-                <Text variant="caption" className="truncate block text-slate-500">
-                  {user.subtitle}
-                </Text>
-              )}
-            </div>
-          </div>
+        {user && profileHref && (
+          <UserMenu
+            user={user}
+            profileHref={profileHref}
+            loginPath={loginPath}
+            variant={variant}
+            placement="top-start"
+          />
         )}
       </div>
     </aside>
