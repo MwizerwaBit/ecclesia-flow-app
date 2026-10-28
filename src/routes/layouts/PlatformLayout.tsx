@@ -1,6 +1,7 @@
 /**
  * @file PlatformLayout.tsx
- * @description Layout for SaaS Platform Admins. Distinct dark theme to prevent confusion.
+ * @description Layout for SaaS Platform Admins. Same shell, colours and light/dark behaviour
+ * as the staff and board layouts; only the brand subtitle and navigation differ.
  */
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -81,7 +82,6 @@ export function PlatformLayout() {
     return <Navigate to="/403" replace />;
   }
 
-  // Force dark mode wrapper for platform admin to distinct it from tenant views
   const signedInAs = {
     name: user ? `${user.firstName} ${user.lastName}` : 'Signed in',
     subtitle: "Platform admin",
@@ -89,7 +89,7 @@ export function PlatformLayout() {
   };
 
   return (
-    <div className="flex min-h-screen bg-slate-950 text-slate-100 dark">
+    <div className="flex h-dvh overflow-hidden bg-background-light dark:bg-background-dark">
       <SideNav
         sections={sections}
         orgName="EcclesiaFlow"
@@ -98,7 +98,6 @@ export function PlatformLayout() {
         profileHref="/platform/account"
         loginPath="/platform/login"
         primaryAction={{ label: 'Register org', href: '/platform/orgs/new', icon: Plus }}
-        variant="platform"
       />
       
       <div className="flex-1 flex flex-col min-w-0">
@@ -107,11 +106,11 @@ export function PlatformLayout() {
             title="Platform Admin"
             leftAction="menu"
             onMenuClick={() => setMenuOpen(true)}
-            rightActions={[<UserMenu key="account" user={signedInAs} profileHref="/platform/account" loginPath="/platform/login" display="avatar" variant="platform" />]}
+            rightActions={[<UserMenu key="account" user={signedInAs} profileHref="/platform/account" loginPath="/platform/login" display="avatar" />]}
           />
         </div>
 
-        <TopBar user={signedInAs} profileHref="/platform/account" loginPath="/platform/login" notificationCount={1} variant="platform" />
+        <TopBar user={signedInAs} profileHref="/platform/account" loginPath="/platform/login" notificationCount={1} />
 
         <div className="flex-1 overflow-y-auto">
           <Outlet />
@@ -127,7 +126,6 @@ export function PlatformLayout() {
         user={signedInAs}
         profileHref="/platform/account"
         loginPath="/platform/login"
-        variant="platform"
       />
     </div>
   );
