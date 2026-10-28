@@ -13,6 +13,17 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, Building2 } from 'lucide-react';
 import { authService } from '@/services/authService';
 import { Button, Card, Input, Text } from '@/components/ui';
+import { all, email as emailRule, minLength, password as passwordRule, required, useFieldErrors } from '@/lib/validation';
+import { apiFieldErrors } from '@/lib/formErrors';
+import { errorMessage } from '@/lib/errors';
+
+// The API's own limits, so a mistake is explained here before the round trip.
+const RULES = {
+  churchName: all(required('Church name'), minLength('Church name', 2)),
+  fullName: required('Your name'),
+  email: all(required('Email'), emailRule),
+  password: all(required('Password'), passwordRule),
+};
 
 export function RegisterScreen() {
   const navigate = useNavigate();
@@ -23,7 +34,9 @@ export function RegisterScreen() {
   const [password, setPassword] = useState('');
 
   const register = useMutation({
-    mutationFn: () => authService.register({ churchName, fullName, email, password }),
+    mutationFn: () => authService.register({ churchName, fullName: fullName.trim(), email: email.trim(), password }),
+    // This screen reports the failure itself, under the field it concerns.
+    meta: { inline: true },
     // The session is applied by OnboardingWizard itself, after it has
     // mounted — not here. Calling setSession while /register (and
     // PublicLayout's "redirect away if already authenticated" guard) is
@@ -34,11 +47,18 @@ export function RegisterScreen() {
     },
   });
 
-  const canSubmit =
-    churchName.trim().length > 0 &&
-    fullName.trim().length > 0 &&
-    email.trim().length > 0 &&
-    password.length >= 8;
+  // What the server rejected, mapped onto this form's fields.
+  const server = apiFieldErrors(register.error);
+  const { field, validateAll } = useFieldErrors(
+    { churchName, fullName, email, password },
+    RULES,
+    { ...server, fullName: server.fullName ?? server.firstName ?? server.lastName },
+  );
+  // Anything the server said that no field on this form owns (or a non-validation failure).
+  const bannerError =
+    register.error && !Object.keys(server).some((k) => ['churchName', 'fullName', 'firstName', 'lastName', 'email', 'password'].includes(k))
+      ? errorMessage(register.error)
+      : null;
 
   return (
     <div className="w-full animate-fade-in px-4">
@@ -52,11 +72,19 @@ export function RegisterScreen() {
           <Building2 size={32} />
         </div>
 
+        {bannerError && (
+          <div role="alert" className="mb-6 p-4 bg-danger-light text-danger rounded-lg text-body-sm font-medium border border-danger/20">
+            {bannerError}
+          </div>
+        )}
+
         <form
           className="space-y-4"
+          noValidate
           onSubmit={(e) => {
             e.preventDefault();
-            if (canSubmit) register.mutate();
+            // Show every problem at once instead of leaving the button dead.
+            if (validateAll()) register.mutate();
           }}
         >
           <Input
@@ -65,6 +93,7 @@ export function RegisterScreen() {
             autoFocus
             value={churchName}
             onChange={(e) => setChurchName(e.target.value)}
+            {...field('churchName')}
           />
           <Input
             label="Your full name"
@@ -72,6 +101,7 @@ export function RegisterScreen() {
             autoComplete="name"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
+            {...field('fullName')}
           />
           <Input
             label="Email"
@@ -79,14 +109,16 @@ export function RegisterScreen() {
             autoComplete="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            {...field('email')}
           />
           <Input
             label="Password"
             type="password"
             autoComplete="new-password"
-            placeholder="At least 8 characters"
+            placeholder="10+ characters, upper and lower case, a number"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            {...field('password')}
           />
 
           <Button
@@ -95,7 +127,6 @@ export function RegisterScreen() {
             size="lg"
             fullWidth
             rightIcon={ArrowRight}
-            disabled={!canSubmit}
             isLoading={register.isPending}
           >
             Create your workspace

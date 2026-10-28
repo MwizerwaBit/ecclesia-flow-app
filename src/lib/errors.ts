@@ -3,6 +3,7 @@
  * @description Human messages for API errors (see components/feedback/ErrorNotice).
  */
 import { ApiError } from '@/services/adapter';
+import { describeError } from '@/lib/formErrors';
 
 export const GUIDANCE: Record<string, string> = {
   mfa_required: 'This needs two-step sign-in. Turn it on in Security settings, then sign in again with your code.',
@@ -16,8 +17,8 @@ export const GUIDANCE: Record<string, string> = {
 
 /** A short, human message for any thrown value. */
 export function errorMessage(error: unknown): string {
-  if (error instanceof ApiError) return GUIDANCE[error.code] ?? error.message;
-  if (error instanceof Error) return error.message;
-  return 'Something went wrong. Try again.';
+  if (error instanceof ApiError && GUIDANCE[error.code]) return GUIDANCE[error.code];
+  // Names the rejected fields for a 422, and keeps network and server faults readable.
+  return describeError(error, 'Something went wrong. Try again.');
 }
 

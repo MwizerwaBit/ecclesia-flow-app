@@ -431,6 +431,7 @@ function AddMembersSheet({
   }, [roster, existing, query]);
 
   const add = useMutation({
+    meta: { inline: true }, // this screen shows the failure itself
     mutationFn: () => groupsService.addMembers(groupId, [...selected], role),
     onSuccess: async () => {
       await onAdded();
