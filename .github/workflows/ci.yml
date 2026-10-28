@@ -56,4 +56,4 @@ jobs:
       - name: Production dependency vulnerabilities
         run: npm audit --omit=dev --audit-level=high
       - name: Scan history for committed secrets
-        run: docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:latest detect --source=/repo --no-banner --redact
+        run: docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.30.1 detect --source=/repo --no-banner --redact
