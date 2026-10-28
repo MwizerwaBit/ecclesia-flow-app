@@ -125,12 +125,12 @@ export function MyProfile() {
             {isEditing ? (
               <form onSubmit={handleSave} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                  <Input 
+                  <Input autoComplete="given-name" 
                     label="First Name" 
                     value={formData.firstName} 
                     onChange={(e) => setFormData({...formData, firstName: e.target.value})} 
                   />
-                  <Input 
+                  <Input autoComplete="family-name" 
                     label="Last Name" 
                     value={formData.lastName} 
                     onChange={(e) => setFormData({...formData, lastName: e.target.value})} 

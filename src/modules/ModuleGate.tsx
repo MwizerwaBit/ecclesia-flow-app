@@ -14,6 +14,7 @@ import { type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Lock, ShieldAlert } from 'lucide-react';
 import { useRole } from '@/hooks/useRole';
+import { useAccess } from '@/hooks/useAccess';
 import { Button, Card, Text } from '@/components/ui';
 import { MODULE_BY_ID } from './registry';
 import { useModules } from './useModules';
@@ -28,11 +29,34 @@ interface ModuleGateProps {
 export function ModuleGate({ moduleId, permission, children }: ModuleGateProps) {
   const { isEnabled, isLoading } = useModules();
   const { can } = useRole();
+  const { isLapsed, isLoading: accessLoading } = useAccess();
   const module = MODULE_BY_ID.get(moduleId);
 
   // Say nothing until the subscription is known — a flash of "not included"
   // before the real answer is worse than a blank moment.
-  if (isLoading) return null;
+  if (isLoading || accessLoading) return null;
+
+  if (!isEnabled(moduleId) && isLapsed) {
+    // Not "your plan lacks this": the church is simply not paid up right now.
+    return (
+      <div className="w-full max-w-lg mx-auto px-4 py-16 animate-fade-in">
+        <Card padding="lg" className="text-center">
+          <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-full bg-warning-light">
+            <Lock size={26} className="text-warning" aria-hidden />
+          </div>
+          <Text variant="h2" className="mb-2">{module?.name ?? 'This part'} is locked</Text>
+          <Text variant="body" color="muted" className="mb-6">
+            It unlocks as soon as your church’s plan is paid. Your information is safe and nothing has been deleted.
+          </Text>
+          <Link to="/staff/settings/billing">
+            <Button variant="primary" fullWidth rightIcon={ArrowRight}>
+              Open Billing
+            </Button>
+          </Link>
+        </Card>
+      </div>
+    );
+  }
 
   if (!isEnabled(moduleId)) {
     return (

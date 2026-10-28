@@ -10,7 +10,8 @@
 import { type ReactNode } from 'react';
 import { Bell, Search } from 'lucide-react';
 import { cn } from '@/lib/cn';
-import { Avatar, Input, Text } from '@/components/ui';
+import { Input, Text } from '@/components/ui';
+import { UserMenu } from './UserMenu';
 
 interface TopBarProps {
   /** Usually omitted: screens carry their own heading via PageHeader, and two
@@ -26,6 +27,10 @@ interface TopBarProps {
   /** Buttons for this screen — the primary one last, as on the mockups. */
   actions?: ReactNode;
   user?: { name: string; photoUrl?: string; subtitle?: string };
+  /** Where the account menu's "My profile" goes. */
+  profileHref?: string;
+  /** Where signing out lands. */
+  loginPath?: string;
   notificationCount?: number;
   variant?: 'default' | 'platform';
   className?: string;
@@ -37,6 +42,8 @@ export function TopBar({
   search,
   actions,
   user,
+  profileHref,
+  loginPath,
   notificationCount,
   variant = 'default',
   className,
@@ -102,23 +109,14 @@ export function TopBar({
           )}
         </button>
 
-        {user && (
-          <div className="flex items-center gap-2.5">
-            <div className="text-right">
-              <Text
-                variant="body-sm"
-                className={cn('font-medium leading-tight', isPlatform && 'text-white')}
-              >
-                {user.name}
-              </Text>
-              {user.subtitle && (
-                <Text variant="label" className="text-accent-gold">
-                  {user.subtitle}
-                </Text>
-              )}
-            </div>
-            <Avatar src={user.photoUrl} name={user.name} size="sm" />
-          </div>
+        {user && profileHref && (
+          <UserMenu
+            user={user}
+            profileHref={profileHref}
+            loginPath={loginPath}
+            variant={variant}
+            className="w-56 xl:w-64"
+          />
         )}
       </div>
     </header>

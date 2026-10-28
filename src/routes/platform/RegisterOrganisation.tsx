@@ -145,13 +145,13 @@ export function RegisterOrganisation() {
         <Text variant="label" color="muted">
           Primary administrator
         </Text>
-        <Input
+        <Input autoComplete="off"
           label="Full name"
           placeholder="Sarah Thompson"
           value={adminName}
           onChange={(e) => setAdminName(e.target.value)}
         />
-        <Input
+        <Input autoComplete="off"
           label="Email"
           type="email"
           placeholder="sarah@stjudes.org"

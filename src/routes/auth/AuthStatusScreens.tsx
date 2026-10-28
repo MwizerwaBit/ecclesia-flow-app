@@ -235,7 +235,7 @@ export function MfaSetup() {
         </code>
       </Card>
 
-      <Input
+      <Input autoComplete="one-time-code"
         label="Six-digit code"
         inputMode="numeric"
         maxLength={6}

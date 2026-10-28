@@ -467,7 +467,7 @@ export function MembersList() {
                 />
                 <div className="min-w-0 flex-1">
                   <p className="font-member-name text-h3 truncate text-slate-900 dark:text-slate-100">
-                    {member.firstName} {member.lastName}
+                    {member.title ? `${member.title} ` : ''}{member.firstName} {member.lastName}
                   </p>
                   <Text variant="caption" color="muted" className="block truncate">
                     {member.groups?.length ? member.groups.map((g) => g.name).join(', ') : member.unitName ?? 'No group yet'}
@@ -510,7 +510,7 @@ export function MembersList() {
                     />
                     <div className="min-w-0">
                       <span className="block font-member-name text-body-lg truncate text-slate-900 dark:text-slate-100">
-                        {member.firstName} {member.lastName}
+                        {member.title ? `${member.title} ` : ''}{member.firstName} {member.lastName}
                       </span>
                       <Text variant="caption" color="muted" className="block truncate max-w-56">
                         {member.email ?? member.phone ?? 'No contact on file'}
@@ -597,7 +597,7 @@ export function MembersList() {
                 </div>
                 <div className="min-w-0 w-full">
                   <p className="font-member-name text-h3 truncate text-slate-900 dark:text-slate-100">
-                    {member.firstName} {member.lastName}
+                    {member.title ? `${member.title} ` : ''}{member.firstName} {member.lastName}
                   </p>
                   <Text variant="caption" color="muted" className="block truncate">
                     {member.unitName ?? 'No unit'}

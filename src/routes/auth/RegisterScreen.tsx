@@ -87,7 +87,7 @@ export function RegisterScreen() {
             if (validateAll()) register.mutate();
           }}
         >
-          <Input
+          <Input autoComplete="organization"
             label="Church name"
             placeholder="e.g. St. Jude's Cathedral"
             autoFocus
