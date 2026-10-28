@@ -97,6 +97,7 @@ export const MODULES: AppModule[] = [
       { path: 'events/new', permission: 'events:create', component: 'CreateEditEvent', load: () => import('@/routes/staff/CreateEditEvent') },
       { path: 'events/:id', permission: 'events:read', component: 'EventDetail', load: () => import('@/routes/staff/EventDetail') },
       { path: 'events/:id/edit', permission: 'events:update', component: 'CreateEditEvent', load: () => import('@/routes/staff/CreateEditEvent') },
+      { path: 'events/:id/responses', permission: 'events:update', component: 'EventResponses', load: () => import('@/routes/staff/events/EventResponses') },
       { path: 'events/reviews', permission: 'events:review', component: 'ReviewQueue', load: () => import('@/routes/staff/events/ReviewQueue') },
     ],
   },

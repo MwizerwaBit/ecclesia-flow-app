@@ -8,13 +8,27 @@
  * a decision at the worst possible moment.
  */
 import { useState } from 'react';
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { useNavigate, useParams } from 'react-router-dom';
-import { Check, Trash2 } from 'lucide-react';
-import type { AttendanceMode, EventType } from '@/types';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { AlertTriangle, Bell, Check, ClipboardList, Copy, Plus, Trash2, Users } from 'lucide-react';
+import type { AttendanceMode, EventType, RegistrationFieldDraft, RegistrationFieldType } from '@/types';
 import { eventsService } from '@/services/eventsService';
 import { commsService } from '@/services/commsService';
-import { Button, Card, Checkbox, Input, SegmentedControl, Select, Text } from '@/components/ui';
+import { groupsService } from '@/services/groupsService';
+import { orgService } from '@/services/orgService';
+import { shareOrCopy } from '@/lib/download';
+import { Avatar, Badge, Button, Card, Checkbox, Input, SegmentedControl, Select, Text } from '@/components/ui';
+import { formatDateTime } from '@/lib/formatters';
+
+const FIELD_TYPES: Array<{ value: RegistrationFieldType; label: string }> = [
+  { value: 'text', label: 'Short answer' },
+  { value: 'single_choice', label: 'Choose one' },
+  { value: 'checkbox', label: 'Choose any' },
+];
+
+function blankField(): RegistrationFieldDraft {
+  return { label: '', fieldType: 'text', options: [], required: false };
+}
 
 const EVENT_TYPES: Array<{ value: EventType; label: string }> = [
   { value: 'service', label: 'Service' },
@@ -35,6 +49,7 @@ const RECURRENCE = [
 export function CreateEditEvent() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const isEditing = Boolean(id);
 
   const [title, setTitle] = useState('');
@@ -46,6 +61,7 @@ export function CreateEditEvent() {
   const [recurrenceRule, setRecurrenceRule] = useState('');
   const [attendanceMode, setAttendanceMode] = useState<AttendanceMode>('individual');
   const [unitId, setUnitId] = useState('');
+  const [groupId, setGroupId] = useState('');
   const [isPublic, setPublic] = useState(true);
   const [publish, setPublish] = useState(true);
 
@@ -53,6 +69,81 @@ export function CreateEditEvent() {
     queryKey: ['units'],
     queryFn: () => commsService.listUnits(),
   });
+
+  const { data: groups = [] } = useQuery({
+    queryKey: ['groups'],
+    queryFn: () => groupsService.list(),
+  });
+
+  // Other groups' gatherings this one would overlap — checked live as soon
+  // as a group and a start time are both picked, so the clash is visible
+  // before saving, not discovered afterward.
+  const { data: collisions = [] } = useQuery({
+    queryKey: ['events', 'collisions', groupId, startDateTime, endDateTime, id],
+    queryFn: () =>
+      eventsService.checkCollisions({
+        groupId,
+        startDateTime: new Date(startDateTime).toISOString(),
+        endDateTime: endDateTime ? new Date(endDateTime).toISOString() : undefined,
+        excludeEventId: id,
+      }),
+    enabled: Boolean(groupId && startDateTime),
+  });
+
+  const notify = useMutation({
+    mutationFn: ({ collidingEventId, memberIds }: { collidingEventId: string; memberIds: string[] }) =>
+      eventsService.notifyConflict(id ?? '', collidingEventId, memberIds),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['events', 'collisions'] }),
+  });
+
+  // ── Registration questions — only exist once the event does. ───────────
+  const [fields, setFields] = useState<RegistrationFieldDraft[]>([]);
+  const [fieldsDirty, setFieldsDirty] = useState(false);
+
+  useQuery({
+    queryKey: ['events', id, 'fields'],
+    queryFn: async () => {
+      const saved = await eventsService.getRegistrationFields(id!);
+      if (!fieldsDirty) {
+        setFields(saved.map(({ label, fieldType, options, required }) => ({ label, fieldType, options, required })));
+      }
+      return saved;
+    },
+    enabled: isEditing,
+  });
+
+  const { data: org } = useQuery({ queryKey: ['org', 'profile'], queryFn: () => orgService.getProfile() });
+  const shareUrl = org && id ? `${window.location.origin}/c/${org.slug}/events/${id}` : '';
+
+  const saveFields = useMutation({
+    mutationFn: () => eventsService.setRegistrationFields(id!, fields),
+    onSuccess: (saved) => {
+      setFields(saved.map(({ label, fieldType, options, required }) => ({ label, fieldType, options, required })));
+      setFieldsDirty(false);
+      queryClient.invalidateQueries({ queryKey: ['events', id, 'fields'] });
+    },
+  });
+
+  function updateField(index: number, patch: Partial<RegistrationFieldDraft>) {
+    setFieldsDirty(true);
+    setFields((prev) => prev.map((f, i) => (i === index ? { ...f, ...patch } : f)));
+  }
+
+  function moveField(index: number, dir: -1 | 1) {
+    const target = index + dir;
+    if (target < 0 || target >= fields.length) return;
+    setFieldsDirty(true);
+    setFields((prev) => {
+      const next = [...prev];
+      [next[index], next[target]] = [next[target], next[index]];
+      return next;
+    });
+  }
+
+  function removeField(index: number) {
+    setFieldsDirty(true);
+    setFields((prev) => prev.filter((_, i) => i !== index));
+  }
 
   // Prefill when editing an existing gathering.
   useQuery({
@@ -68,6 +159,7 @@ export function CreateEditEvent() {
       setRecurrenceRule(event.recurrenceRule ?? '');
       setAttendanceMode(event.attendanceMode);
       setUnitId(event.unitId ?? '');
+      setGroupId(event.groupId ?? '');
       setPublic(event.isPublic);
       setPublish(event.status === 'published');
       return event;
@@ -95,6 +187,7 @@ export function CreateEditEvent() {
         recurrenceRule: recurrenceRule || undefined,
         attendanceMode,
         unitId: unitId || undefined,
+        groupId: groupId || undefined,
         isPublic,
         status: publish ? ('published' as const) : ('draft' as const),
       };
@@ -161,7 +254,7 @@ export function CreateEditEvent() {
       />
 
       <Select
-        label="Group"
+        label="Branch / unit"
         value={unitId}
         onChange={(e) => setUnitId(e.target.value)}
         options={[
@@ -169,6 +262,63 @@ export function CreateEditEvent() {
           ...units.map((u) => ({ value: u.id, label: u.name })),
         ]}
       />
+
+      <Select
+        label="Group (optional)"
+        value={groupId}
+        onChange={(e) => setGroupId(e.target.value)}
+        options={[{ value: '', label: 'Not tied to a group' }, ...groups.map((g) => ({ value: g.id, label: g.name }))]}
+      />
+
+      {groupId && startDateTime && collisions.length > 0 && (
+        <Card variant="outline" padding="md" className="border-warning/50 bg-warning-light/40 space-y-3">
+          <Text variant="label" className="flex items-center gap-1.5 text-warning">
+            <AlertTriangle size={14} aria-hidden /> Schedule clash
+          </Text>
+          {collisions.map((c) => (
+            <div key={c.eventId} className="space-y-2 border-t border-warning/20 pt-2 first:border-t-0 first:pt-0">
+              <Text variant="body-sm">
+                Overlaps <strong>{c.eventTitle}</strong> ({c.groupName}, {formatDateTime(c.startDateTime)}) —
+                about {c.affectedMemberCount} {c.affectedMemberCount === 1 ? 'person is' : 'people are'} in both
+                groups.
+              </Text>
+              {c.keyParticipants.length > 0 && (
+                <div className="space-y-1.5">
+                  {c.keyParticipants.map((kp) => (
+                    <div key={kp.memberId} className="flex items-center justify-between gap-2">
+                      <span className="flex items-center gap-2 min-w-0">
+                        <Avatar name={kp.name} size="xs" />
+                        <Text variant="caption" className="truncate">
+                          {kp.name} leads {kp.groupName}
+                        </Text>
+                        <Badge variant="warning" size="sm">
+                          <Users size={10} aria-hidden /> Key
+                        </Badge>
+                      </span>
+                      {isEditing && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          leftIcon={Bell}
+                          isLoading={notify.isPending && notify.variables?.memberIds[0] === kp.memberId}
+                          onClick={() => notify.mutate({ collidingEventId: c.eventId, memberIds: [kp.memberId] })}
+                        >
+                          Ask them
+                        </Button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+          {!isEditing && (
+            <Text variant="caption" color="muted">
+              Save the gathering first to notify a leader directly.
+            </Text>
+          )}
+        </Card>
+      )}
 
       <div className="flex flex-col gap-1.5">
         <label htmlFor="event-description" className="text-label text-slate-700 dark:text-slate-300">
@@ -204,6 +354,136 @@ export function CreateEditEvent() {
             : 'Staff enter totals only. Fast, but no individual records.'}
         </Text>
       </Card>
+
+      {isEditing ? (
+        <Card variant="outline" padding="md" className="space-y-4">
+          <div className="flex items-center justify-between gap-2">
+            <Text variant="label" color="muted">
+              Registration questions
+            </Text>
+            {fields.length > 0 && (
+              <Link to={`/staff/events/${id}/responses`} className="text-body-sm text-primary hover:underline flex items-center gap-1">
+                <ClipboardList size={13} aria-hidden /> View responses
+              </Link>
+            )}
+          </div>
+          <Text variant="caption" color="muted" className="-mt-2 block">
+            Shown on the public share link before anyone RSVPs. Leave empty for a plain "I'll be there".
+          </Text>
+
+          {shareUrl && (
+            <div className="flex items-center gap-2">
+              <Input value={shareUrl} readOnly className="font-mono text-caption" />
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                leftIcon={Copy}
+                onClick={() => shareOrCopy({ title: title || 'Gathering', url: shareUrl })}
+              >
+                Copy
+              </Button>
+            </div>
+          )}
+
+          <div className="space-y-3">
+            {fields.map((field, index) => (
+              <div key={index} className="rounded-lg border border-slate-200 dark:border-slate-700 p-3 space-y-2">
+                <div className="flex items-start gap-2">
+                  <Input
+                    label="Question"
+                    value={field.label}
+                    onChange={(e) => updateField(index, { label: e.target.value })}
+                    className="flex-1"
+                  />
+                  <Select
+                    label="Type"
+                    value={field.fieldType}
+                    onChange={(e) =>
+                      updateField(index, {
+                        fieldType: e.target.value as RegistrationFieldType,
+                        options: e.target.value === 'text' ? [] : field.options,
+                      })
+                    }
+                    options={FIELD_TYPES}
+                  />
+                </div>
+
+                {field.fieldType !== 'text' && (
+                  <Input
+                    label="Options (comma-separated)"
+                    value={field.options.join(', ')}
+                    onChange={(e) =>
+                      updateField(index, {
+                        options: e.target.value
+                          .split(',')
+                          .map((o) => o.trim())
+                          .filter(Boolean),
+                      })
+                    }
+                  />
+                )}
+
+                <div className="flex items-center justify-between">
+                  <Checkbox
+                    label="Required"
+                    checked={field.required}
+                    onChange={(e) => updateField(index, { required: e.target.checked })}
+                  />
+                  <div className="flex items-center gap-1">
+                    <Button type="button" variant="ghost" size="sm" onClick={() => moveField(index, -1)} disabled={index === 0}>
+                      ↑
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => moveField(index, 1)}
+                      disabled={index === fields.length - 1}
+                    >
+                      ↓
+                    </Button>
+                    <Button type="button" variant="ghost" size="sm" leftIcon={Trash2} onClick={() => removeField(index)}>
+                      Remove
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="flex items-center justify-between gap-2">
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
+              leftIcon={Plus}
+              onClick={() => {
+                setFieldsDirty(true);
+                setFields((prev) => [...prev, blankField()]);
+              }}
+            >
+              Add question
+            </Button>
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              isLoading={saveFields.isPending}
+              disabled={!fieldsDirty || fields.some((f) => !f.label.trim() || (f.fieldType !== 'text' && f.options.length === 0))}
+              onClick={() => saveFields.mutate()}
+            >
+              Save questions
+            </Button>
+          </div>
+        </Card>
+      ) : (
+        <Card variant="flat" padding="md">
+          <Text variant="body-sm" color="muted">
+            Save this gathering first to add registration questions.
+          </Text>
+        </Card>
+      )}
 
       <div className="space-y-3">
         <Checkbox

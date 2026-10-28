@@ -132,13 +132,18 @@ export function GroupsList() {
             Ministries, small groups, choirs and teams — where your people take part.
           </Text>
         </div>
-        {can('groups:manage') && (
-          <Link to="/staff/groups/new">
-            <Button variant="primary" leftIcon={Plus}>
-              New group
-            </Button>
+        <div className="flex items-center gap-2">
+          <Link to="/staff/groups/roles">
+            <Button variant="secondary">Roles</Button>
           </Link>
-        )}
+          {can('groups:manage') && (
+            <Link to="/staff/groups/new">
+              <Button variant="primary" leftIcon={Plus}>
+                New group
+              </Button>
+            </Link>
+          )}
+        </div>
       </header>
 
       {/* Summary */}

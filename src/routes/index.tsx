@@ -55,6 +55,7 @@ const marketingRoutes = {
     { path: 'churches', lazy: screen(() => import('./public/ChooseChurch'), 'ChooseChurch') },
     { path: 'c/:slug', lazy: screen(() => import('./public/ChurchLandingPage'), 'ChurchLandingPage') },
     { path: 'c/:slug/calendar', lazy: screen(() => import('./public/PublicEventCalendar'), 'PublicEventCalendar') },
+    { path: 'c/:slug/events/:eventId', lazy: screen(() => import('./public/PublicEventRegister'), 'PublicEventRegister') },
     { path: 'c/:slug/join', lazy: screen(() => import('./public/JoinChurch'), 'JoinChurch') },
   ],
 };

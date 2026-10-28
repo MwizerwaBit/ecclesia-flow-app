@@ -19,8 +19,8 @@ import type {
   VisitorQuickAdd,
 } from '@/types';
 import { mockResponse, API_MODE, apiRequest } from './adapter';
-import { MOCK_VISITOR_FOLLOWUPS } from '@/mocks/members.mock';
-import { MOCK_UNITS } from '@/mocks/comms.mock';
+import { MOCK_FOLLOWUP_OVERRIDES, MOCK_VISITOR_FOLLOWUPS, patchMockFollowup } from '@/mocks/members.mock';
+import { MOCK_TEAM, MOCK_UNITS } from '@/mocks/comms.mock';
 import { currentTenantId, newId, readPeople, writePeople, type HouseholdRecord, type PeopleData } from '@/mocks/peopleStore';
 import { normalisePhone } from '@/lib/people';
 
@@ -326,20 +326,74 @@ export const membersService = {
           .filter((m) => m.status === 'visitor')
           .map((m): VisitorFollowUp => {
             const known = MOCK_VISITOR_FOLLOWUPS.find((f) => f.memberId === m.id);
-            if (known) return { ...known, member: toListItem(m, data) };
-            const visitDate = m.joinedAt ?? m.createdAt.slice(0, 10);
+            const visitDate = known?.visitDate ?? m.joinedAt ?? m.createdAt.slice(0, 10);
+            const base: VisitorFollowUp = known
+              ? { ...known, member: toListItem(m, data) }
+              : {
+                  id: `vf-${m.id}`,
+                  memberId: m.id,
+                  member: toListItem(m, data),
+                  visitDate,
+                  daysSinceVisit: Math.max(0, Math.floor((Date.now() - new Date(visitDate).getTime()) / day)),
+                  status: 'pending',
+                };
+            const override = MOCK_FOLLOWUP_OVERRIDES[m.id];
+            if (!override) return base;
+            const assignedToId = 'assignedToId' in override ? override.assignedToId : base.assignedToId;
+            const assignedToName = 'assignedToName' in override ? override.assignedToName : base.assignedToName;
+            const notes = 'note' in override ? override.note : base.notes;
             return {
-              id: `vf-${m.id}`,
-              memberId: m.id,
+              ...base,
               member: toListItem(m, data),
-              visitDate,
-              daysSinceVisit: Math.max(0, Math.floor((Date.now() - new Date(visitDate).getTime()) / day)),
-              status: 'pending',
+              assignedToId,
+              assignedToName,
+              notes,
+              status: override.resolvedAt ? 'resolved' : assignedToId ? 'assigned' : 'pending',
             };
           }),
       );
     }
     return apiRequest<VisitorFollowUp[]>('/members/visitor-followups');
+  },
+
+  async assignFollowUp(memberId: string, assignedToUserId: string): Promise<void> {
+    if (API_MODE === 'mock') {
+      const person = MOCK_TEAM.find((t) => t.userId === assignedToUserId);
+      patchMockFollowup(memberId, {
+        assignedToId: assignedToUserId,
+        assignedToName: person ? `${person.firstName} ${person.lastName}` : null,
+        resolvedAt: null,
+      });
+      return mockResponse(undefined as void);
+    }
+    await apiRequest(`/members/${memberId}/followup/assign`, {
+      method: 'POST',
+      body: JSON.stringify({ assignedToUserId }),
+    });
+  },
+
+  async unassignFollowUp(memberId: string): Promise<void> {
+    if (API_MODE === 'mock') {
+      patchMockFollowup(memberId, { assignedToId: null, assignedToName: null });
+      return mockResponse(undefined as void);
+    }
+    await apiRequest(`/members/${memberId}/followup/assign`, { method: 'DELETE' });
+  },
+
+  async resolveFollowUp(memberId: string, note?: string): Promise<void> {
+    if (API_MODE === 'mock') {
+      patchMockFollowup(memberId, { resolvedAt: new Date().toISOString(), note: note ?? null });
+      return mockResponse(undefined as void);
+    }
+    await apiRequest(`/members/${memberId}/followup/resolve`, { method: 'POST', body: JSON.stringify({ note }) });
+  },
+
+  async reopenFollowUp(memberId: string): Promise<void> {
+    if (API_MODE === 'mock') {
+      patchMockFollowup(memberId, { resolvedAt: null });
+      return mockResponse(undefined as void);
+    }
+    await apiRequest(`/members/${memberId}/followup/reopen`, { method: 'POST' });
   },
 
   async quickAddVisitor(data: VisitorQuickAdd): Promise<MemberListItem> {
