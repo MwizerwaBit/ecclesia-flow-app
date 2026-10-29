@@ -16,6 +16,7 @@ import {
   Award,
   Banknote,
   BarChart3,
+  BellRing,
   CalendarCheck,
   CalendarDays,
   ClipboardCheck,
@@ -138,11 +139,15 @@ export const MODULES: AppModule[] = [
     description: 'Announcements to the congregation, by email and in the portal.',
     icon: Megaphone,
     minTier: 'seed',
-    nav: [{ label: 'Announcements', path: 'comms/announcements', icon: Megaphone, section: 'Operations', permission: 'announcements:read' }],
+    nav: [
+      { label: 'Announcements', path: 'comms/announcements', icon: Megaphone, section: 'Operations', permission: 'announcements:read' },
+      { label: 'Send a notification', path: 'comms/notify', icon: BellRing, section: 'Operations', permission: 'notifications:send' },
+    ],
     routes: [
       { path: 'comms/announcements', index: true, permission: 'announcements:read', component: 'AnnouncementsList', load: () => import('@/routes/staff/comms/AnnouncementsList') },
       { path: 'comms/announcements/new', permission: 'announcements:create', component: 'CreateAnnouncement', load: () => import('@/routes/staff/comms/CreateAnnouncement') },
       { path: 'comms/announcements/:id', permission: 'announcements:read', component: 'AnnouncementDetail', load: () => import('@/routes/staff/comms/AnnouncementDetail') },
+      { path: 'comms/notify', permission: 'notifications:send', component: 'SendNotification', load: () => import('@/routes/staff/comms/SendNotification') },
     ],
   },
 
