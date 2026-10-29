@@ -46,9 +46,10 @@ export const billingService = {
   },
 
   /** Where to send the mobile money, and how much, for the plan and months chosen. */
-  async paymentInstructions(tier: OrgTier, months: number): Promise<PaymentInstructions> {
+  async paymentInstructions(tier: OrgTier, months: number, currency?: string): Promise<PaymentInstructions> {
     requireApi('Payment');
-    return apiRequest<PaymentInstructions>(`/billing/manual/instructions?tier=${tier}&months=${months}`);
+    const query = `tier=${tier}&months=${months}${currency ? `&currency=${encodeURIComponent(currency)}` : ''}`;
+    return apiRequest<PaymentInstructions>(`/billing/manual/instructions?${query}`);
   },
 
   /** Reports a mobile-money payment with its proof (PNG, JPEG or PDF up to 10 MB). */
@@ -57,6 +58,7 @@ export const billingService = {
     months: number;
     senderName: string;
     sentAmountCents: number;
+    currency?: string;
     momoTransactionId?: string;
     proof: File;
   }): Promise<ManualPayment> {
@@ -66,6 +68,7 @@ export const billingService = {
     body.append('months', String(input.months));
     body.append('sender_name', input.senderName);
     body.append('sent_amount_cents', String(input.sentAmountCents));
+    if (input.currency) body.append('currency', input.currency);
     if (input.momoTransactionId) body.append('momo_transaction_id', input.momoTransactionId);
     body.append('proof', input.proof);
     return apiRequest<ManualPayment>('/billing/manual/payments', { method: 'POST', body, rawBody: true });

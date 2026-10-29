@@ -112,11 +112,18 @@ export function AccountLocked() {
 }
 
 export function SessionExpired() {
+  const [params] = useSearchParams();
+  const idleMinutes = Number(params.get('minutes'));
+  const idle = params.get('reason') === 'idle' && idleMinutes > 0;
   return (
     <StatusShell
       icon={<Clock size={38} className="text-primary" aria-hidden />}
-      title="You were away for a while"
-      description="We signed you out to keep your church's records safe. Nothing you saved has been lost."
+      title={idle ? 'You were signed out' : 'You were away for a while'}
+      description={
+        idle
+          ? `There was no activity for ${idleMinutes} minutes, so we signed you out to keep your church's records safe. Nothing you saved has been lost.`
+          : "We signed you out to keep your church's records safe. Nothing you saved has been lost."
+      }
     >
       <Link to="/login">
         <Button variant="primary" fullWidth>

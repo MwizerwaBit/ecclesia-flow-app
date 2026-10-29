@@ -11,6 +11,7 @@ import { type ReactNode } from 'react';
 import { Bell, Search } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { Input, Text } from '@/components/ui';
+import { ThemeToggle } from './ThemeToggle';
 import { UserMenu } from './UserMenu';
 
 interface TopBarProps {
@@ -91,6 +92,7 @@ export function TopBar({
       {actions && <div className="flex items-center gap-2 shrink-0">{actions}</div>}
 
       <div className="flex items-center gap-3 shrink-0 border-l border-slate-200 dark:border-slate-800 pl-4">
+        <ThemeToggle />
         <button
           type="button"
           aria-label={
