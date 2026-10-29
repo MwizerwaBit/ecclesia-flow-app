@@ -31,6 +31,7 @@ const SECTION_TITLES: Array<[string, string]> = [
   ['/staff/attendance/headcount', 'Headcount'],
   ['/staff/attendance/report', 'Attendance report'],
   ['/staff/attendance', 'Attendance'],
+  ['/staff/events/calendar', 'Calendar'],
   ['/staff/events', 'Gatherings'],
   ['/staff/hierarchy', 'Structure'],
   ['/staff/analytics', 'Analytics'],

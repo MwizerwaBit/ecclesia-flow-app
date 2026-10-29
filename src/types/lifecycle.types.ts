@@ -49,6 +49,7 @@ export type OrgProfileUpdate = Partial<
     | 'region'
     | 'website'
     | 'primaryColor'
+    | 'timezone'
   >
 >;
 

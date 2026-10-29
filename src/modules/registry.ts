@@ -92,10 +92,12 @@ export const MODULES: AppModule[] = [
     minTier: 'free',
     nav: [
       { label: 'Events', path: 'events', icon: CalendarDays, section: 'Gatherings', permission: 'events:read' },
+      { label: 'Calendar', path: 'events/calendar', icon: CalendarDays, section: 'Gatherings', permission: 'events:read' },
       { label: 'Reviews', path: 'events/reviews', icon: ClipboardCheck, section: 'Gatherings', permission: 'events:review' },
     ],
     routes: [
       { path: 'events', index: true, permission: 'events:read', component: 'EventsList', load: () => import('@/routes/staff/EventsList') },
+      { path: 'events/calendar', permission: 'events:read', component: 'EventsCalendar', load: () => import('@/routes/staff/EventsCalendar') },
       { path: 'events/new', permission: 'events:create', component: 'CreateEditEvent', load: () => import('@/routes/staff/CreateEditEvent') },
       { path: 'events/:id', permission: 'events:read', component: 'EventDetail', load: () => import('@/routes/staff/EventDetail') },
       { path: 'events/:id/edit', permission: 'events:update', component: 'CreateEditEvent', load: () => import('@/routes/staff/CreateEditEvent') },

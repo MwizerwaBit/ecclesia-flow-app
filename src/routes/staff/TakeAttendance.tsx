@@ -26,6 +26,8 @@ import { eventsService } from '@/services/eventsService';
 import { MasterDetail } from '@/components/layout';
 import { Avatar, Badge, Button, Card, EmptyState, Input, StatTile, Text } from '@/components/ui';
 import { formatDate, formatPercent, formatTime } from '@/lib/formatters';
+import { useChurchTimeZone } from '@/hooks/useChurchTimeZone';
+import { eventWhen, upcomingByDate } from '@/components/events/eventOccurrence';
 import { cn } from '@/lib/cn';
 
 export function TakeAttendance() {
@@ -39,10 +41,14 @@ export function TakeAttendance() {
   /** Fills the desktop detail pane; the last person touched, marked or unmarked. */
   const [focusedId, setFocusedId] = useState<string | null>(null);
 
-  const { data: events } = useQuery({
+  const zone = useChurchTimeZone();
+
+  const { data: rawEvents } = useQuery({
     queryKey: ['events', 'upcoming'],
     queryFn: () => eventsService.list({ upcoming: true }),
   });
+  // Soonest next date first, so the default is the gathering that is actually next.
+  const events = useMemo(() => (rawEvents ? upcomingByDate(rawEvents) : undefined), [rawEvents]);
 
   const { data: members = [], isLoading } = useQuery({
     queryKey: ['members', 'roster'],
@@ -335,7 +341,7 @@ export function TakeAttendance() {
               </Text>
               <Text variant="body-sm" color="muted">
                 {activeEvent
-                  ? `${formatTime(activeEvent.startDateTime)} · ${activeEvent.location ?? 'Location TBC'}`
+                  ? `${activeEvent.isAllDay ? 'All day' : formatTime(eventWhen(activeEvent), 'en-US', zone)} · ${activeEvent.location ?? 'Location TBC'}`
                   : 'No event selected'}
               </Text>
             </div>
