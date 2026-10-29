@@ -6,11 +6,20 @@
  * by flipping API_MODE in adapter.ts — screens never change.
  */
 import type {
+  AttendanceMode,
   AttendanceRecord,
   AttendanceSummary,
+  CalendarFilters,
+  CalendarOccurrence,
+  CalendarWindow,
   ChurchEvent,
   EventCollision,
+  EventHistoryEntry,
   EventListItem,
+  EventTheme,
+  EventType,
+  EventVisibility,
+  PublicCalendarWindow,
   EventRegistration,
   EventRegistrationInput,
   HeadcountEntry,
@@ -20,13 +29,75 @@ import type {
   RegistrationFieldDraft,
   ReviewerOption,
 } from '@/types';
-import { mockResponse, API_MODE, apiRequest, requireApi } from './adapter';
+import { mockResponse, API_MODE, apiRequest, apiRequestAll, requireApi } from './adapter';
 import { MOCK_EVENTS, MOCK_EVENT_DETAIL, MOCK_ATTENDANCE_SUMMARY } from '@/mocks/events.mock';
 
 export interface AttendanceMarkInput {
   eventId: string;
   memberId: string;
   memberName: string;
+}
+
+/**
+ * What the API accepts when creating or editing a gathering. Status and
+ * public/private are deliberately absent: a gathering starts as a draft and
+ * moves through submit / review / publish / cancel, and who may see it is its
+ * `visibility`.
+ *
+ * Times: a value with no UTC offset ("2026-03-01T09:00", what a date-time input
+ * gives) is the church's local time; the server places it in the church's zone.
+ */
+export interface EventWrite {
+  title: string;
+  type: EventType;
+  description: string;
+  location: string;
+  startDateTime: string;
+  endDateTime: string;
+  isAllDay: boolean;
+  recurrenceRule: string;
+  unitId: string | null;
+  groupId: string | null;
+  visibility: EventVisibility;
+  attendanceMode: AttendanceMode;
+  onlineUrl: string | null;
+  capacity: number | null;
+  coverImageUrl: string | null;
+  theme: EventTheme;
+  /** The `updatedAt` the editor was looking at; a newer save elsewhere answers 409 `edit_conflict`. */
+  expectedUpdatedAt: string;
+}
+
+function calendarQuery(from: string, to: string, filters: CalendarFilters = {}): string {
+  const params = new URLSearchParams({ from, to });
+  for (const [key, value] of Object.entries(filters)) if (value) params.set(key, value);
+  return params.toString();
+}
+
+/** The mock dataset as calendar dates, so the screens work without the API. */
+function mockCalendar(from: string, to: string, filters: CalendarFilters = {}): CalendarWindow {
+  const start = new Date(from).getTime();
+  const end = new Date(to).getTime();
+  const occurrences: CalendarOccurrence[] = MOCK_EVENTS.filter((e) => {
+    const at = new Date(e.startDateTime).getTime();
+    return at >= start && at <= end && (!filters.type || e.type === filters.type);
+  }).map((e) => ({
+    eventId: e.id,
+    title: e.title,
+    type: e.type,
+    status: e.status,
+    visibility: e.isPublic ? 'public' : 'members',
+    unitId: null,
+    groupId: null,
+    groupName: null,
+    location: e.location ?? null,
+    occurrenceStart: new Date(e.startDateTime).toISOString(),
+    occurrenceEnd: e.endDateTime ? new Date(e.endDateTime).toISOString() : null,
+    isAllDay: false,
+    isRecurring: false,
+    accentColor: null,
+  }));
+  return { timezone: 'UTC', windowStart: from, windowEnd: to, truncated: false, occurrences };
 }
 
 export const eventsService = {
@@ -58,7 +129,33 @@ export const eventsService = {
       );
     }
     const qs = new URLSearchParams(params as Record<string, string>).toString();
-    return apiRequest<EventListItem[]>(`/events?${qs}`);
+    // Every page: the API caps a page at 500 rows and a church can have more.
+    return apiRequestAll<EventListItem>(`/events?${qs}`);
+  },
+
+  /**
+   * Dated appearances of events between `from` and `to` (at most 93 days), repeating
+   * events already expanded in the church's time zone. Staff see every status in
+   * their scope; members only what a member may see.
+   */
+  async calendar(from: string, to: string, filters: CalendarFilters = {}): Promise<CalendarWindow> {
+    if (API_MODE === 'mock') return mockResponse(mockCalendar(from, to, filters));
+    return apiRequest<CalendarWindow>(`/events/calendar?${calendarQuery(from, to, filters)}`);
+  },
+
+  /** A church's published public gatherings in a window — no sign-in. */
+  async publicCalendar(slug: string, from: string, to: string): Promise<PublicCalendarWindow> {
+    requireApi('Public events');
+    return apiRequest<PublicCalendarWindow>(
+      `/churches/${encodeURIComponent(slug)}/calendar?${calendarQuery(from, to)}`,
+      { skipAuth: true },
+    );
+  },
+
+  /** Who created, changed, submitted, approved, published or canceled a gathering. */
+  async history(eventId: string): Promise<EventHistoryEntry[]> {
+    requireApi('Event history');
+    return apiRequest<EventHistoryEntry[]>(`/events/${eventId}/history`);
   },
 
   async getById(id: string): Promise<ChurchEvent> {
@@ -82,14 +179,14 @@ export const eventsService = {
     return apiRequest<ChurchEvent>(`/events/${id}`);
   },
 
-  async create(data: Partial<ChurchEvent>): Promise<ChurchEvent> {
+  async create(data: Partial<EventWrite>): Promise<ChurchEvent> {
     if (API_MODE === 'mock') {
       return mockResponse<ChurchEvent>({ ...MOCK_EVENT_DETAIL, ...data, id: `ev-${Date.now()}` });
     }
     return apiRequest<ChurchEvent>('/events', { method: 'POST', body: JSON.stringify(data) });
   },
 
-  async update(id: string, data: Partial<ChurchEvent>): Promise<ChurchEvent> {
+  async update(id: string, data: Partial<EventWrite>): Promise<ChurchEvent> {
     if (API_MODE === 'mock') {
       return mockResponse<ChurchEvent>({ ...MOCK_EVENT_DETAIL, ...data, id });
     }
@@ -201,7 +298,8 @@ export const eventsService = {
 
   async occurrences(eventId: string, from: string, to: string): Promise<string[]> {
     requireApi('Repeating events');
-    return apiRequest<string[]>(
+    // A list endpoint: a daily series over a year is more than one page.
+    return apiRequestAll<string>(
       `/events/${eventId}/occurrences?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
     );
   },

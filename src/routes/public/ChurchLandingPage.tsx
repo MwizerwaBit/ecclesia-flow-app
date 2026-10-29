@@ -9,13 +9,17 @@
  * backend fills this in with whatever the church's own admins have set up
  * (a welcome message, photos) without the page shape changing.
  */
+import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
 import { ArrowRight, CalendarDays, MapPin } from 'lucide-react';
 import { churchDirectoryService } from '@/services/churchDirectoryService';
 import { eventsService } from '@/services/eventsService';
 import { Button, Card, EmptyState, Skeleton, Text } from '@/components/ui';
-import { formatDateShort, formatTime } from '@/lib/formatters';
+import { DateChip } from '@/components/events/DateChip';
+import { eventWhen, upcomingByDate } from '@/components/events/eventOccurrence';
+import { usePublicChurchZone } from '@/components/events/usePublicChurchZone';
+import { formatTime } from '@/lib/formatters';
 
 export function ChurchLandingPage() {
   const { slug = '' } = useParams();
@@ -32,7 +36,14 @@ export function ChurchLandingPage() {
     enabled: Boolean(church),
   });
 
-  const upcoming = events.slice(0, 3);
+  // The church's zone (the public calendar names it), so a 9:00 service sits on its own Sunday.
+  const zone = usePublicChurchZone(slug);
+  // A repeating service is about its next date, not the one it started on.
+  const nextDate = eventWhen;
+  const upcoming = useMemo(
+    () => upcomingByDate(events).slice(0, 3),
+    [events],
+  );
 
   if (isLoading) {
     return (
@@ -92,26 +103,22 @@ export function ChurchLandingPage() {
       ) : (
         <div className="space-y-3 mb-4">
           {upcoming.map((event) => (
-            <Link key={event.id} to={`/c/${slug}/events/${event.id}`}>
-              <Card padding="md" variant="outline" className="flex items-center gap-3 hover:border-primary/40 transition-colors">
-                <div className="shrink-0 w-12 rounded-lg bg-primary-light dark:bg-primary/15 py-1.5 text-center">
-                  <Text variant="caption" className="font-bold uppercase text-primary block">
-                    {formatDateShort(event.startDateTime).split(' ')[0]}
-                  </Text>
-                  <Text variant="h3" className="text-primary leading-none">
-                    {new Date(event.startDateTime).getDate()}
-                  </Text>
-                </div>
-                <div className="min-w-0 flex-1">
+            <Card key={event.id} padding="none" variant="outline" className="hover:border-primary/40 transition-colors">
+              <Link
+                to={`/c/${slug}/events/${event.id}`}
+                className="flex items-stretch focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/50"
+              >
+                <DateChip instant={nextDate(event)} zone={zone} className="w-16 py-3" />
+                <div className="min-w-0 flex-1 p-3">
                   <Text variant="body" className="font-medium truncate">
                     {event.title}
                   </Text>
                   <Text variant="caption" color="muted">
-                    {formatTime(event.startDateTime)}
+                    {event.isAllDay ? 'All day' : formatTime(nextDate(event), 'en-US', zone)}
                   </Text>
                 </div>
-              </Card>
-            </Link>
+              </Link>
+            </Card>
           ))}
         </div>
       )}

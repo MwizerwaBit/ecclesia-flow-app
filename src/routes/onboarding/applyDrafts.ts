@@ -23,8 +23,7 @@ export async function applyDrafts(drafts: OnboardingDrafts): Promise<void> {
       type: 'service',
       startDateTime: drafts.eventDate,
       attendanceMode: 'individual',
-      isPublic: true,
-      status: 'published',
+      visibility: 'public',
     });
   }
 }
