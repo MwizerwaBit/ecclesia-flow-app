@@ -94,23 +94,6 @@ export function TopBar({
         {/* A platform admin belongs to no church, so has no notifications. */}
         {!isPlatform && <NotificationBell variant="dropdown" />}
         <ThemeToggle />
-        <button
-          type="button"
-          aria-label={
-            notificationCount ? `${notificationCount} unread notifications` : 'Notifications'
-          }
-          className={cn(
-            'relative grid size-11 place-items-center rounded-lg transition-colors',
-            isPlatform
-              ? 'text-slate-300 hover:bg-slate-800'
-              : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800',
-          )}
-        >
-          <Bell size={19} />
-          {!!notificationCount && (
-            <span className="absolute right-2 top-2 size-2 rounded-full bg-danger" />
-          )}
-        </button>
 
         {user && profileHref && (
           <UserMenu
