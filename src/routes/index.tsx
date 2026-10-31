@@ -72,7 +72,7 @@ const publicRoutes = {
     { path: 'forgot-password', element: <ForgotPassword /> },
     { path: 'reset-password', element: <ResetPassword /> },
     { path: 'mfa/challenge', element: <MfaChallenge /> },
-    { path: 'mfa/setup', lazy: screen(() => import('./auth/AuthStatusScreens'), 'MfaSetup') },
+    { path: 'mfa/setup', lazy: screen(() => import('./auth/MfaSetup'), 'MfaSetup') },
     { path: 'magic-link-sent', lazy: screen(() => import('./auth/AuthStatusScreens'), 'MagicLinkSent') },
     { path: 'verify-email', lazy: screen(() => import('./auth/AuthStatusScreens'), 'VerificationWaiting') },
     { path: 'account-locked', lazy: screen(() => import('./auth/AuthStatusScreens'), 'AccountLocked') },
