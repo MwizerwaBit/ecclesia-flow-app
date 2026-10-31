@@ -8,20 +8,18 @@
  * yourself out by accident is the one outcome nobody wants from this screen.
  */
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
 import {
   Check,
   Laptop,
   LogOut,
   type LucideIcon,
-  Shield,
-  ShieldCheck,
   Smartphone,
   Tablet,
 } from 'lucide-react';
 import { Badge, Button, Card, Input, Text } from '@/components/ui';
 import { formatRelative } from '@/lib/formatters';
 import { useRole } from '@/hooks/useRole';
+import { TwoStepSignIn } from '@/components/account/TwoStepSignIn';
 import { IdleTimeoutSetting } from './IdleTimeoutSetting';
 
 interface Session {
@@ -44,7 +42,6 @@ export function SecuritySettings() {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [mfaEnabled, setMfaEnabled] = useState(false);
   const [revokedIds, setRevokedIds] = useState<Set<string>>(new Set());
   const [passwordChanged, setPasswordChanged] = useState(false);
 
@@ -74,51 +71,7 @@ export function SecuritySettings() {
       </header>
 
       {/* Two-factor — first, because it is the one that matters most */}
-      <Card
-        variant="outline"
-        padding="md"
-        className={mfaEnabled ? 'border-success/40' : 'border-warning/40 bg-warning-light/30'}
-      >
-        <div className="flex items-start gap-3">
-          {mfaEnabled ? (
-            <ShieldCheck size={22} className="text-success shrink-0 mt-0.5" aria-hidden />
-          ) : (
-            <Shield size={22} className="text-warning shrink-0 mt-0.5" aria-hidden />
-          )}
-
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-0.5">
-              <Text variant="h3">Two-factor authentication</Text>
-              <Badge variant={mfaEnabled ? 'success' : 'warning'} size="sm">
-                {mfaEnabled ? 'On' : 'Off'}
-              </Badge>
-            </div>
-
-            <Text variant="body-sm" color="muted">
-              {mfaEnabled
-                ? 'A code from your authenticator app is required at every sign-in.'
-                : 'Without it, your password is the only thing protecting member and giving records.'}
-            </Text>
-
-            {mfaEnabled ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="mt-3"
-                onClick={() => setMfaEnabled(false)}
-              >
-                Turn off
-              </Button>
-            ) : (
-              <Link to="/mfa/setup">
-                <Button variant="primary" size="sm" className="mt-3">
-                  Set up two-factor
-                </Button>
-              </Link>
-            )}
-          </div>
-        </div>
-      </Card>
+      <TwoStepSignIn />
 
       {can('org:settings') && <IdleTimeoutSetting />}
 
