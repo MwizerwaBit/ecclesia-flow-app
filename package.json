@@ -23,7 +23,7 @@
     "@tanstack/query-sync-storage-persister": "^5.105.0",
     "@tanstack/react-query": "^5.103.2",
     "@tanstack/react-query-persist-client": "^5.104.1",
-    "autoprefixer": "^10.6.1",
+    "autoprefixer": "^10.6.2",
     "clsx": "^2.1.1",
     "lucide-react": "^1.47.0",
     "postcss": "^8.5.28",
