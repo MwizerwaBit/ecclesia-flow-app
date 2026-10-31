@@ -21,6 +21,8 @@ import {
 } from 'lucide-react';
 import { Badge, Button, Card, Input, Text } from '@/components/ui';
 import { formatRelative } from '@/lib/formatters';
+import { useRole } from '@/hooks/useRole';
+import { IdleTimeoutSetting } from './IdleTimeoutSetting';
 
 interface Session {
   id: string;
@@ -38,6 +40,7 @@ const MOCK_SESSIONS: Session[] = [
 ];
 
 export function SecuritySettings() {
+  const { can } = useRole();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -116,6 +119,8 @@ export function SecuritySettings() {
           </div>
         </div>
       </Card>
+
+      {can('org:settings') && <IdleTimeoutSetting />}
 
       {/* Password */}
       <div>

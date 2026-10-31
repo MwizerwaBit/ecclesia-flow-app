@@ -22,6 +22,7 @@ export type ModuleId =
   | 'certificates'
   | 'hierarchy'
   | 'analytics'
+  | 'reports'
   | 'media'
   | 'administration';
 

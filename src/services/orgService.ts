@@ -13,7 +13,29 @@ import type {
 } from '@/types';
 import { apiBlob, apiRequest, requireApi } from './adapter';
 
+export interface SecuritySettings {
+  /** Minutes a leader-side session may sit idle before sign-out. */
+  sessionIdleMinutes: number;
+  minMinutes: number;
+  maxMinutes: number;
+  /** Members always get this many. */
+  memberMinutes: number;
+}
+
 export const orgService = {
+  async getSecurity(): Promise<SecuritySettings> {
+    requireApi('Security settings');
+    return apiRequest<SecuritySettings>('/org/security');
+  },
+
+  async setIdleMinutes(sessionIdleMinutes: number): Promise<SecuritySettings> {
+    requireApi('Security settings');
+    return apiRequest<SecuritySettings>('/org/security', {
+      method: 'PUT',
+      body: JSON.stringify({ sessionIdleMinutes }),
+    });
+  },
+
   async getProfile(): Promise<OrgProfile> {
     requireApi('Church profile');
     return apiRequest<OrgProfile>('/org/profile');

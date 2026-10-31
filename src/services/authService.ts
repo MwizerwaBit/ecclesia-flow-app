@@ -82,6 +82,7 @@ interface ServerSession {
   permissions: string[];
   role: string | null;
   unitScopeId: string | null;
+  idleTimeoutMinutes?: number;
 }
 
 /** Reads the (unverified) claims of our own access token — display only, never for decisions. */
@@ -115,6 +116,7 @@ function toAuthSession(s: ServerSession): AuthSession {
     accessToken: s.accessToken,
     expiresAt,
     mfaVerified: Boolean(claims.mfa_verified),
+    idleTimeoutMinutes: s.idleTimeoutMinutes,
     membershipId: membership?.id,
     memberships: s.memberships,
     user: {
