@@ -11,6 +11,7 @@ import { useAuthStore } from '@/hooks/useAuthStore';
 import { DevRoleSwitcher } from '@/components/dev/DevRoleSwitcher';
 import { OfflineBanner, Toaster } from '@/components/ui';
 import { IdleGuard } from '@/components/layout/IdleGuard';
+import { ImpersonationBanner } from '@/components/layout/ImpersonationBanner';
 import { toast } from '@/hooks/useToastStore';
 import { errorMessage } from '@/lib/errors';
 
@@ -92,6 +93,7 @@ export function App() {
     >
       <OfflineBanner />
       <RouterProvider router={router} />
+      <ImpersonationBanner />
       <Toaster />
       <IdleGuard />
       <DevRoleSwitcher />

@@ -9,7 +9,9 @@ import type {
   JoinChurchPayload,
   LoginCredentials,
   MembershipSummary,
+  ImpersonationSession,
   MfaChallenge,
+  MfaEnrolment,
   ResetPasswordPayload,
 } from '@/types';
 import { mockResponse, API_MODE, apiRequest, requireApi, setAccessToken, setStepUpToken } from './adapter';
@@ -86,7 +88,7 @@ interface ServerSession {
 }
 
 /** Reads the (unverified) claims of our own access token — display only, never for decisions. */
-function tokenClaims(token: string): { mfa_verified?: boolean; exp?: number } {
+function tokenClaims(token: string): { mfa_verified?: boolean; exp?: number; permissions?: string[] } {
   try {
     const part = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
     return JSON.parse(atob(part));
@@ -133,6 +135,40 @@ function toAuthSession(s: ServerSession): AuthSession {
       permissions: s.permissions,
       unitScopeId: s.unitScopeId ?? undefined,
     },
+  };
+}
+
+/**
+ * The session a platform admin gets while impersonating a church: the admin's own
+ * identity, the church's name, and the permissions the server put in the one-hour
+ * token. The token is the church's, not the admin's, and cannot be renewed.
+ */
+export function impersonationSession(impersonation: ImpersonationSession, admin: AuthSession): AuthSession {
+  const claims = tokenClaims(impersonation.token);
+  const expiresAt = claims.exp ? claims.exp * 1000 : impersonation.expiresAt;
+  setAccessToken(impersonation.token, expiresAt);
+  const role = (
+    [ROLES.BOARD, ROLES.STAFF, ROLES.MEMBER] as string[]
+  ).includes(impersonation.role)
+    ? (impersonation.role as Role)
+    : ROLES.STAFF;
+  return {
+    accessToken: impersonation.token,
+    expiresAt,
+    mfaVerified: Boolean(claims.mfa_verified),
+    user: {
+      ...admin.user,
+      role,
+      tenantId: impersonation.orgId,
+      tenantName: impersonation.orgName,
+      tenantSlug: undefined,
+      permissions: claims.permissions,
+      unitScopeId: undefined,
+    },
+    isImpersonating: true,
+    impersonatedOrgName: impersonation.orgName,
+    impersonatedRole: impersonation.role,
+    impersonationExpiresAt: expiresAt,
   };
 }
 
@@ -312,6 +348,36 @@ export const authService = {
     } catch {
       return false;
     }
+  },
+
+  /**
+   * Starts setting up two-step sign-in: the server makes a key and backup codes but
+   * leaves it off until confirmMfaSetup receives a valid code. Starting again replaces them.
+   */
+  async startMfaSetup(): Promise<MfaEnrolment> {
+    if (API_MODE === 'mock') {
+      return mockResponse<MfaEnrolment>({
+        secret: 'JBSWY3DPEHPK3PXP',
+        provisioningUri: 'otpauth://totp/EcclesiaFlow:demo?secret=JBSWY3DPEHPK3PXP&issuer=EcclesiaFlow',
+        backupCodes: ['4f2a91cd7b', '7b1033aec8', 'c8e420bf1d', '1d976a45e3', 'e30b88129a'],
+      });
+    }
+    return apiRequest<MfaEnrolment>('/auth/mfa/setup', { method: 'POST' });
+  },
+
+  /** Turns two-step sign-in on, given a code from the authenticator app. Throws on a wrong code. */
+  async confirmMfaSetup(code: string): Promise<void> {
+    if (API_MODE === 'mock') {
+      if (code.length !== 6) throw new Error('Incorrect verification code');
+      return mockResponse(undefined as void);
+    }
+    await apiRequest('/auth/mfa/verify', { method: 'POST', body: JSON.stringify({ code }) });
+  },
+
+  /** Turns it off. The caller must have passed verifyStepUp just before (the server requires it). */
+  async disableMfa(): Promise<void> {
+    if (API_MODE === 'mock') return mockResponse(undefined as void);
+    await apiRequest('/auth/mfa/disable', { method: 'POST' });
   },
 
   async requestPasswordReset(email: string): Promise<void> {

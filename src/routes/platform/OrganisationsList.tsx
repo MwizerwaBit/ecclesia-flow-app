@@ -17,6 +17,7 @@ const STATUS_BADGE: Record<
   OrgStatus,
   { variant: 'success' | 'info' | 'warning' | 'danger'; label: string }
 > = {
+  pending: { variant: 'warning', label: 'Pending' },
   active: { variant: 'success', label: 'Active' },
   trial: { variant: 'info', label: 'Trial' },
   suspended: { variant: 'warning', label: 'Suspended' },
@@ -61,6 +62,7 @@ export function OrganisationsList() {
         options={[
           { value: 'all', label: 'All' },
           { value: 'active', label: 'Active' },
+          { value: 'pending', label: 'Pending' },
           { value: 'trial', label: 'Trial' },
           { value: 'suspended', label: 'Suspended' },
         ]}
@@ -88,7 +90,8 @@ export function OrganisationsList() {
 
       <Card padding="none" className="divide-y divide-slate-100 dark:divide-slate-800">
         {orgs.map((org) => {
-          const badge = STATUS_BADGE[org.status];
+          // The API sends the status as free text; an unknown one shows as itself rather than breaking the list.
+          const badge = STATUS_BADGE[org.status] ?? { variant: 'info' as const, label: org.status };
 
           return (
             <Link
