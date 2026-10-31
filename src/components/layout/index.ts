@@ -15,3 +15,5 @@ export * from './PageContainer';
 export * from './StickyActionBar';
 export * from './PageGuide';
 export * from './BillingBanner';
+export * from './ThemeToggle';
+export * from './SiteHeader';

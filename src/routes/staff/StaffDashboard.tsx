@@ -10,6 +10,7 @@ import { membersService } from '@/services/membersService';
 import { eventsService } from '@/services/eventsService';
 import { financeService } from '@/services/financeService';
 import { commsService } from '@/services/commsService';
+import { upcomingByDate } from '@/components/events/eventOccurrence';
 import { formatCurrencyCompact, formatNumber, formatPercent } from '@/lib/formatters';
 
 export function StaffDashboard() {
@@ -117,7 +118,7 @@ export function StaffDashboard() {
         />
         <StatCard
           title="Upcoming Events"
-          value={formatNumber(upcomingEvents.length)}
+          value={formatNumber(upcomingByDate(upcomingEvents).length)}
           trend="Scheduled from today"
           trendPositive={true}
           icon={CalendarClock}

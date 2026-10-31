@@ -13,6 +13,8 @@ import { Baby, Check, Minus, Plus, Users } from 'lucide-react';
 import { eventsService } from '@/services/eventsService';
 import { Button, Card, Text } from '@/components/ui';
 import { formatDate } from '@/lib/formatters';
+import { useChurchTimeZone } from '@/hooks/useChurchTimeZone';
+import { eventWhen, upcomingByDate } from '@/components/events/eventOccurrence';
 
 interface CounterProps {
   label: string;
@@ -70,6 +72,7 @@ export function HeadcountEntry() {
   const [searchParams] = useSearchParams();
   const eventId = searchParams.get('eventId');
 
+  const zone = useChurchTimeZone();
   const [adults, setAdults] = useState(0);
   const [children, setChildren] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
@@ -80,7 +83,8 @@ export function HeadcountEntry() {
     queryFn: () => eventsService.list({ upcoming: true }),
   });
 
-  const activeEvent = events?.find((e) => e.id === eventId) ?? events?.[0];
+  const upcoming = events ? upcomingByDate(events) : undefined;
+  const activeEvent = upcoming?.find((e) => e.id === eventId) ?? upcoming?.[0];
   const total = adults + children;
 
   async function submit() {
@@ -140,7 +144,7 @@ export function HeadcountEntry() {
         </Text>
         <Text variant="body" color="muted">
           {activeEvent
-            ? `${activeEvent.title} · ${formatDate(activeEvent.startDateTime)}`
+            ? `${activeEvent.title} · ${formatDate(eventWhen(activeEvent), 'en-US', zone)}${activeEvent.isAllDay ? ' · All day' : ''}`
             : 'No event selected'}
         </Text>
       </header>

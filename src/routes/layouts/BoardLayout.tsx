@@ -8,6 +8,7 @@ import { BarChart, Globe, Network, Plus, Settings } from 'lucide-react';
 import { useRole } from '@/hooks/useRole';
 import { useCurrentUser } from '@/hooks/useAuthStore';
 import { SideNav, TopHeader, NavDrawer, TopBar, PageGuide, UserMenu } from '@/components/layout';
+import { NotificationBell } from '@/components/notifications';
 
 const SIDEBAR_SECTIONS = [
   {
@@ -75,11 +76,14 @@ export function BoardLayout() {
             title="Network Admin"
             leftAction="menu"
             onMenuClick={() => setMenuOpen(true)}
-            rightActions={[<UserMenu key="account" user={signedInAs} profileHref="/board/account" loginPath="/login" display="avatar" />]}
+            rightActions={[
+              <NotificationBell key="notifications" variant="link" />,
+              <UserMenu key="account" user={signedInAs} profileHref="/board/account" loginPath="/login" display="avatar" />,
+            ]}
           />
         </div>
 
-        <TopBar user={signedInAs} profileHref="/board/account" loginPath="/login" notificationCount={1} />
+        <TopBar user={signedInAs} profileHref="/board/account" loginPath="/login" />
 
         <div className="flex-1 overflow-y-auto">
           <Outlet />

@@ -7,19 +7,21 @@ import { Home, Heart, Calendar, Bell, UsersRound } from 'lucide-react';
 import { useRole } from '@/hooks/useRole';
 import { useCurrentUser } from '@/hooks/useAuthStore';
 import { BottomTabBar, TopHeader, PageGuide, UserMenu } from '@/components/layout';
+import { useUnreadCount } from '@/hooks/useNotifications';
 
-const MOBILE_TABS = [
+const BASE_TABS = [
   { label: 'Home', href: '/portal', icon: Home },
   { label: 'Giving', href: '/portal/giving', icon: Heart },
   { label: 'Events', href: '/portal/events', icon: Calendar },
   { label: 'Groups', href: '/portal/groups', icon: UsersRound },
-  { label: 'Alerts', href: '/portal/notifications', icon: Bell, badgeCount: 2 },
 ];
 
 export function MemberLayout() {
   const { isMember, isAuthenticated } = useRole();
   const user = useCurrentUser();
   const location = useLocation();
+  const unread = useUnreadCount().data ?? 0;
+  const tabs = [...BASE_TABS, { label: 'Alerts', href: '/portal/notifications', icon: Bell, badgeCount: unread }];
 
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;
@@ -62,7 +64,7 @@ export function MemberLayout() {
         <PageGuide />
       </div>
       
-      <BottomTabBar items={MOBILE_TABS} />
+      <BottomTabBar items={tabs} />
     </div>
   );
 }

@@ -12,6 +12,7 @@
  * <Badge variant="danger" size="sm">Suspended</Badge>
  */
 import { cn } from '@/lib/cn';
+import { EVENT_STATUS_LABEL } from '@/lib/events';
 
 type BadgeVariant = 'success' | 'warning' | 'danger' | 'info' | 'neutral' | 'primary' | 'platform';
 type BadgeSize = 'sm' | 'md';
@@ -95,7 +96,14 @@ const STATUS_VARIANT: Record<string, BadgeVariant> = {
   archived: 'neutral',
   fulfilled: 'success',
   overdue: 'danger',
+  // Event statuses (draft, published and canceled are shared with the entries above)
+  pending_review: 'warning',
+  changes_requested: 'warning',
+  completed: 'neutral',
 };
+
+/** Words for statuses whose raw value is not fit to read ("pending_review"). */
+const STATUS_LABEL: Record<string, string> = EVENT_STATUS_LABEL;
 
 interface StatusBadgeProps {
   status: string;
@@ -103,10 +111,11 @@ interface StatusBadgeProps {
 }
 
 export function StatusBadge({ status, size = 'md' }: StatusBadgeProps) {
-  const variant = STATUS_VARIANT[status.toLowerCase()] ?? 'neutral';
+  const key = status.toLowerCase();
+  const variant = STATUS_VARIANT[key] ?? 'neutral';
   return (
     <Badge variant={variant} size={size} dot>
-      {status.charAt(0).toUpperCase() + status.slice(1)}
+      {STATUS_LABEL[key] ?? status.charAt(0).toUpperCase() + status.slice(1)}
     </Badge>
   );
 }

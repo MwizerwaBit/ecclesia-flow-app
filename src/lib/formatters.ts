@@ -41,38 +41,40 @@ export function formatCurrencyCompact(amount: number, currency = 'USD', locale =
 // ─── Dates ────────────────────────────────────────────────────────────────────
 
 /**
- * Format a date as "Oct 12, 2024"
+ * Format a date as "Oct 12, 2024". Pass `timeZone` (the church's) to show the day it
+ * falls on there rather than in the viewer's browser zone.
  */
-export function formatDate(date: Date | string, locale = 'en-US'): string {
+export function formatDate(date: Date | string, locale = 'en-US', timeZone?: string): string {
   const d = typeof date === 'string' ? new Date(date) : date;
   return new Intl.DateTimeFormat(locale, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
+    timeZone,
   }).format(d);
 }
 
 /**
  * Format as "Oct 12" (no year — for event cards)
  */
-export function formatDateShort(date: Date | string, locale = 'en-US'): string {
+export function formatDateShort(date: Date | string, locale = 'en-US', timeZone?: string): string {
   const d = typeof date === 'string' ? new Date(date) : date;
-  return new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric' }).format(d);
+  return new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric', timeZone }).format(d);
 }
 
 /**
  * Format a time as "9:00 AM"
  */
-export function formatTime(date: Date | string, locale = 'en-US'): string {
+export function formatTime(date: Date | string, locale = 'en-US', timeZone?: string): string {
   const d = typeof date === 'string' ? new Date(date) : date;
-  return new Intl.DateTimeFormat(locale, { hour: 'numeric', minute: '2-digit' }).format(d);
+  return new Intl.DateTimeFormat(locale, { hour: 'numeric', minute: '2-digit', timeZone }).format(d);
 }
 
 /**
  * Format a date + time as "Oct 12, 2024 at 9:00 AM"
  */
-export function formatDateTime(date: Date | string, locale = 'en-US'): string {
-  return `${formatDate(date, locale)} at ${formatTime(date, locale)}`;
+export function formatDateTime(date: Date | string, locale = 'en-US', timeZone?: string): string {
+  return `${formatDate(date, locale, timeZone)} at ${formatTime(date, locale, timeZone)}`;
 }
 
 /**

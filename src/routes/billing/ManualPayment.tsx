@@ -105,10 +105,13 @@ export function ManualPayment() {
   const validChoice = TIERS.includes(tier) && Number.isInteger(months) && months >= 1 && months <= MAX_MONTHS;
 
   const overview = useQuery({ queryKey: ['billing', 'overview'], queryFn: () => billingService.overview() });
+  // undefined = the server's default currency; set once the church picks one.
+  const [currency, setCurrency] = useState<string | undefined>(undefined);
   const instructions = useQuery({
-    queryKey: ['billing', 'instructions', tier, months],
-    queryFn: () => billingService.paymentInstructions(tier, months),
+    queryKey: ['billing', 'instructions', tier, months, currency],
+    queryFn: () => billingService.paymentInstructions(tier, months, currency),
     enabled: validChoice,
+    placeholderData: (previous) => previous,
   });
 
   const [senderName, setSenderName] = useState('');
@@ -119,12 +122,17 @@ export function ManualPayment() {
   const [sent, setSent] = useState<ManualPayment | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
 
-  // The amount to send is the default; most people send exactly that.
+  // The amount to send is the default; most people send exactly that. It is
+  // refilled when the currency changes (the old number would be in the wrong
+  // currency) but never over what someone has typed in the same currency.
+  const shownCurrency = instructions.data?.currency;
+  const filledFor = useRef<string | undefined>(undefined);
   useEffect(() => {
-    if (instructions.data && amount === '') setAmount(String(instructions.data.amountCents / 100));
-    // Only when the price first arrives, never over what someone has typed.
+    if (!instructions.data || filledFor.current === instructions.data.currency) return;
+    if (amount === '' || filledFor.current !== undefined) setAmount(String(instructions.data.amountCents / 100));
+    filledFor.current = instructions.data.currency;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [instructions.data]);
+  }, [shownCurrency]);
 
   const preview = useMemo(() => (proof && proof.type.startsWith('image/') ? URL.createObjectURL(proof) : null), [proof]);
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
@@ -136,6 +144,7 @@ export function ManualPayment() {
         months,
         senderName: senderName.trim(),
         sentAmountCents: Math.round(Number(amount) * 100),
+        currency: info?.currency,
         momoTransactionId: transactionId.trim() || undefined,
         proof: proof as File,
       }),
@@ -259,7 +268,23 @@ export function ManualPayment() {
             {...field('senderName')}
           />
           <Input
-            label={`Amount you sent${info ? ` (${info.currency.toUpperCase()})` : ''}`}
+            label="Amount you sent"
+            suffix={
+              info && info.options.length > 1 ? (
+                <select
+                  aria-label="Currency"
+                  value={info.currency}
+                  onChange={(e) => setCurrency(e.target.value)}
+                  className="h-9 rounded-md border-0 bg-slate-100 px-2 text-body-sm font-semibold dark:bg-slate-800"
+                >
+                  {info.options.map((o) => (
+                    <option key={o.currency} value={o.currency}>{o.currency.toUpperCase()}</option>
+                  ))}
+                </select>
+              ) : info ? (
+                <span className="px-2 text-body-sm font-semibold text-slate-500">{info.currency.toUpperCase()}</span>
+              ) : undefined
+            }
             type="number"
             inputMode="decimal"
             min="0"

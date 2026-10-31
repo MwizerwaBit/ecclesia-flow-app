@@ -2,7 +2,7 @@
  * @file App.tsx
  * @description Root component. Provides global context providers and mounts the router.
  */
-import { MutationCache, QueryClient } from '@tanstack/react-query';
+import { defaultShouldDehydrateQuery, MutationCache, QueryClient } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
 import { RouterProvider } from 'react-router-dom';
@@ -10,6 +10,7 @@ import { router } from '@/routes';
 import { useAuthStore } from '@/hooks/useAuthStore';
 import { DevRoleSwitcher } from '@/components/dev/DevRoleSwitcher';
 import { OfflineBanner, Toaster } from '@/components/ui';
+import { IdleGuard } from '@/components/layout/IdleGuard';
 import { toast } from '@/hooks/useToastStore';
 import { errorMessage } from '@/lib/errors';
 
@@ -77,11 +78,22 @@ export function App() {
       client={queryClient}
       // The buster ties a persisted cache to the user and church that wrote it:
       // restoring one written under a different session discards it instead.
-      persistOptions={{ persister, maxAge: 24 * 60 * 60 * 1000, buster: cacheOwner() }}
+      persistOptions={{
+        persister,
+        maxAge: 24 * 60 * 60 * 1000,
+        buster: cacheOwner(),
+        // What a notification says stays out of the copy saved on the device: it may be about
+        // someone's situation, and it is cheap to fetch again.
+        dehydrateOptions: {
+          shouldDehydrateQuery: (query) =>
+            defaultShouldDehydrateQuery(query) && query.queryKey[0] !== 'notifications',
+        },
+      }}
     >
       <OfflineBanner />
       <RouterProvider router={router} />
       <Toaster />
+      <IdleGuard />
       <DevRoleSwitcher />
     </PersistQueryClientProvider>
   );

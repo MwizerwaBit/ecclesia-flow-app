@@ -39,13 +39,21 @@ export function BottomSheet({
   className,
 }: BottomSheetProps) {
   const panelRef = useRef<HTMLDivElement>(null);
+  // The latest onClose, read from the Escape handler. Callers often pass a fresh
+  // function every render; keeping it here means the effect below does not re-run
+  // (and re-focus the panel, stealing focus from a field being typed in) each time.
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
 
-  // Escape to close + lock background scroll while the sheet is up
+  // Escape to close + lock background scroll while the sheet is up. Runs only when
+  // `open` changes, so focus moves into the sheet once, on the closed-to-open step.
   useEffect(() => {
     if (!open) return;
 
     const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') onCloseRef.current();
     };
     document.addEventListener('keydown', onKeyDown);
 
@@ -59,7 +67,7 @@ export function BottomSheet({
       document.removeEventListener('keydown', onKeyDown);
       document.body.style.overflow = previousOverflow;
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 

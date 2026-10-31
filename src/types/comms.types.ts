@@ -5,7 +5,16 @@
 
 export type AnnouncementStatus = 'draft' | 'scheduled' | 'sent' | 'archived';
 export type NotificationChannel = 'email' | 'push' | 'in_app' | 'sms';
-export type NotificationType = 'pastoral_alert' | 'finance_alert' | 'system' | 'announcement';
+export type NotificationType =
+  | 'pastoral_alert'
+  | 'finance_alert'
+  | 'system'
+  | 'announcement'
+  | 'event'
+  | 'approval'
+  | 'billing'
+  | 'reminder'
+  | 'manual';
 
 export interface Announcement {
   id: string;
@@ -54,9 +63,28 @@ export interface Notification {
   title: string;
   body: string;
   isRead: boolean;
-  actionUrl?: string;
+  /** When it was read; absent for notifications read before the time was recorded. */
+  readAt?: string | null;
+  /** An in-app path to open, if the notification points somewhere. */
+  actionUrl?: string | null;
+  /** What it is about (e.g. 'event'), for the server to re-check on opening. */
+  resourceType?: string | null;
+  resourceId?: string | null;
   createdAt: string;
 }
+
+/** One page of a person's notifications, and how many there are in all. */
+export interface NotificationPage {
+  items: Notification[];
+  total: number;
+}
+
+export type NotificationStatusFilter = 'all' | 'unread';
+
+/** A change to some preferences: only the types and channels named are touched. */
+export type NotificationPreferencesPatch = Partial<
+  Record<NotificationType, Partial<Record<NotificationChannel, boolean>>>
+>;
 
 export interface NotificationPreferences {
   userId: string;
@@ -176,4 +204,36 @@ export interface InviteStaffPayload {
   unitScope?: string;
   expiresAt?: string;
   message?: string;
+}
+
+// ─── Sending a notification to members ────────────────────────────────────────
+
+/** Who a manual notification is for: members of these units (home unit) with these
+ *  statuses. An empty list narrows nothing; a branch-scoped sender only ever reaches their branch. */
+export interface SendAudience {
+  unitIds: string[];
+  statuses: Array<'active' | 'visitor' | 'prospect'>;
+}
+
+/** Counts only, so a preview can't be used to read who is in a branch. */
+export interface SendEstimate {
+  members: number;
+  withLogin: number;
+  withoutLogin: number;
+}
+
+export interface BroadcastResult {
+  id: string;
+  /** Members matched. */
+  audienceSize: number;
+  /** Matched but with no login, so nothing could be sent to them. */
+  withoutLogin: number;
+  /** Notifications created. */
+  notified: number;
+  /** Turned this kind off. */
+  optedOut: number;
+  /** Have a login that isn't an active member here. */
+  skipped: number;
+  /** This request key was used before: nothing new was sent. */
+  alreadySent: boolean;
 }

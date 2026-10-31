@@ -16,9 +16,12 @@ import {
   Award,
   Banknote,
   BarChart3,
+  BellRing,
   CalendarCheck,
   CalendarDays,
   ClipboardCheck,
+  FileBarChart,
+  FileSpreadsheet,
   FolderOpen,
   HeartHandshake,
   Megaphone,
@@ -90,10 +93,12 @@ export const MODULES: AppModule[] = [
     minTier: 'free',
     nav: [
       { label: 'Events', path: 'events', icon: CalendarDays, section: 'Gatherings', permission: 'events:read' },
+      { label: 'Calendar', path: 'events/calendar', icon: CalendarDays, section: 'Gatherings', permission: 'events:read' },
       { label: 'Reviews', path: 'events/reviews', icon: ClipboardCheck, section: 'Gatherings', permission: 'events:review' },
     ],
     routes: [
       { path: 'events', index: true, permission: 'events:read', component: 'EventsList', load: () => import('@/routes/staff/EventsList') },
+      { path: 'events/calendar', permission: 'events:read', component: 'EventsCalendar', load: () => import('@/routes/staff/EventsCalendar') },
       { path: 'events/new', permission: 'events:create', component: 'CreateEditEvent', load: () => import('@/routes/staff/CreateEditEvent') },
       { path: 'events/:id', permission: 'events:read', component: 'EventDetail', load: () => import('@/routes/staff/EventDetail') },
       { path: 'events/:id/edit', permission: 'events:update', component: 'CreateEditEvent', load: () => import('@/routes/staff/CreateEditEvent') },
@@ -136,11 +141,15 @@ export const MODULES: AppModule[] = [
     description: 'Announcements to the congregation, by email and in the portal.',
     icon: Megaphone,
     minTier: 'seed',
-    nav: [{ label: 'Announcements', path: 'comms/announcements', icon: Megaphone, section: 'Operations', permission: 'announcements:read' }],
+    nav: [
+      { label: 'Announcements', path: 'comms/announcements', icon: Megaphone, section: 'Operations', permission: 'announcements:read' },
+      { label: 'Send a notification', path: 'comms/notify', icon: BellRing, section: 'Operations', permission: 'notifications:send' },
+    ],
     routes: [
       { path: 'comms/announcements', index: true, permission: 'announcements:read', component: 'AnnouncementsList', load: () => import('@/routes/staff/comms/AnnouncementsList') },
       { path: 'comms/announcements/new', permission: 'announcements:create', component: 'CreateAnnouncement', load: () => import('@/routes/staff/comms/CreateAnnouncement') },
       { path: 'comms/announcements/:id', permission: 'announcements:read', component: 'AnnouncementDetail', load: () => import('@/routes/staff/comms/AnnouncementDetail') },
+      { path: 'comms/notify', permission: 'notifications:send', component: 'SendNotification', load: () => import('@/routes/staff/comms/SendNotification') },
     ],
   },
 
@@ -198,6 +207,18 @@ export const MODULES: AppModule[] = [
   },
 
   {
+    id: 'reports',
+    name: 'Reports',
+    description: 'Membership counts and trends, with spreadsheet downloads.',
+    icon: FileBarChart,
+    minTier: 'seed',
+    nav: [{ label: 'Reports', path: 'reports', icon: FileBarChart, section: 'Operations', permission: 'analytics:read' }],
+    routes: [
+      { path: 'reports', index: true, permission: 'analytics:read', component: 'ReportsHome', load: () => import('@/routes/staff/reports/ReportsHome') },
+    ],
+  },
+
+  {
     id: 'administration',
     name: 'Administration',
     description: 'Team, roles, organisation settings, billing and data controls.',
@@ -207,6 +228,7 @@ export const MODULES: AppModule[] = [
     nav: [
       { label: 'Team & roles', path: 'team', icon: Users, section: 'Administration', permission: 'team:read' },
       { label: 'Leadership', path: 'team/structure', icon: Network, section: 'Administration', permission: 'team:read' },
+      { label: 'Import & export', path: 'data', icon: FileSpreadsheet, section: 'Administration', permission: 'members:create' },
       { label: 'Settings', path: 'settings', icon: Settings, section: 'Administration' },
     ],
     routes: [
@@ -214,6 +236,7 @@ export const MODULES: AppModule[] = [
       { path: 'team/invite', permission: 'team:invite', component: 'InviteStaff', load: () => import('@/routes/staff/team/InviteStaff') },
       { path: 'team/roles/new', permission: 'roles:create', component: 'CustomRoleBuilder', load: () => import('@/routes/staff/team/CustomRoleBuilder') },
       { path: 'team/structure', permission: 'team:read', component: 'LeadershipStructure', load: () => import('@/routes/staff/team/LeadershipStructure') },
+      { path: 'data', permission: 'members:create', component: 'DataExchange', load: () => import('@/routes/staff/data/DataExchange') },
       { path: 'settings', component: 'OrganisationSettings', load: () => import('@/routes/staff/settings/OrganisationSettings') },
       { path: 'settings/security', component: 'SecuritySettings', load: () => import('@/routes/staff/settings/SecuritySettings') },
       { path: 'settings/notifications', component: 'NotificationPreferences', load: () => import('@/routes/staff/settings/NotificationPreferences') },

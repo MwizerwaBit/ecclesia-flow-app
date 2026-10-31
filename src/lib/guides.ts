@@ -119,6 +119,20 @@ const GUIDES: Record<string, Guide> = {
       },
     ],
   },
+  '/staff/events/calendar': {
+    id: 'staff-events-calendar',
+    steps: [
+      {
+        title: 'Your gatherings by date',
+        body: 'Tap a day to see what is on. Use the arrows to change month, or switch to Agenda for a simple list.',
+      },
+      {
+        title: 'Add one on a day',
+        body: 'Open a day and choose New gathering to start on that date. Drafts and ones waiting for review are marked.',
+        action: { label: 'New gathering', to: '/staff/events/new' },
+      },
+    ],
+  },
   '/staff/attendance/take': {
     id: 'staff-attendance',
     steps: [

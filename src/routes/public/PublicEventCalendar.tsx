@@ -1,17 +1,27 @@
 /**
  * @file PublicEventCalendar.tsx
- * @description Upcoming services, visible without signing in.
+ * @description A church's calendar, visible without signing in: a month grid or an
+ * agenda of what is coming up.
  *
  * Written for someone deciding whether to visit this Sunday, so the practical
- * details — when, where, is it for me — come before anything else.
+ * details — when, where — come before anything else. A repeating service is on
+ * every one of its dates, placed on the church's own days (the zone the API
+ * names), not the visitor's. The month and view are in the URL.
  */
+import { useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
-import { CalendarDays, Clock, MapPin } from 'lucide-react';
+import { MapPin } from 'lucide-react';
+import type { PublicCalendarOccurrence } from '@/types';
 import { eventsService } from '@/services/eventsService';
 import { churchDirectoryService } from '@/services/churchDirectoryService';
-import { Badge, Button, Card, EmptyState, Skeleton, Text } from '@/components/ui';
-import { formatDateShort, formatTime } from '@/lib/formatters';
+import { Button, Card, EmptyState, Skeleton, Text } from '@/components/ui';
+import { useCalendarWindow, type FilterKey } from '@/components/events/calendar';
+import { ReadOnlyCalendar } from '@/components/events/ReadOnlyCalendar';
+import { cn } from '@/lib/cn';
+
+// The public endpoint takes no filters, so none are read from the URL.
+const NO_FILTERS: FilterKey[] = [];
 
 export function PublicEventCalendar() {
   const { slug = '' } = useParams();
@@ -22,10 +32,13 @@ export function PublicEventCalendar() {
     enabled: Boolean(slug),
   });
 
-  const { data: publicEvents = [], isLoading } = useQuery({
-    queryKey: ['events', 'public', slug],
-    queryFn: () => eventsService.publicEvents(slug),
-    enabled: Boolean(slug),
+  const source = useCallback((from: string, to: string) => eventsService.publicCalendar(slug, from, to), [slug]);
+  const cal = useCalendarWindow<PublicCalendarOccurrence>({
+    scope: `public:${slug}`,
+    source,
+    filterKeys: NO_FILTERS,
+    enabled: Boolean(slug && church),
+    profileZone: false, // a visitor is signed out: never ask for the church profile
   });
 
   if (isLoadingChurch) {
@@ -55,7 +68,7 @@ export function PublicEventCalendar() {
   }
 
   return (
-    <div className="w-full max-w-2xl mx-auto px-4 py-12 animate-fade-in">
+    <div className={cn('w-full mx-auto px-4 py-12 animate-fade-in', cal.view === 'month' ? 'max-w-2xl xl:max-w-5xl' : 'max-w-2xl')}>
       <header className="text-center mb-8">
         <Link to={`/c/${slug}`} className="text-body-sm text-slate-500 hover:text-primary transition-colors mb-3 inline-block">
           &larr; Back to {church.displayName}
@@ -68,61 +81,16 @@ export function PublicEventCalendar() {
         </Text>
       </header>
 
-      {isLoading && (
-        <Text variant="body" color="muted" className="text-center py-10">
-          Loading services…
-        </Text>
-      )}
-
-      {!isLoading && publicEvents.length === 0 && (
-        <EmptyState
-          icon={CalendarDays}
-          title="Nothing listed just now"
-          description="Get in touch and we will tell you when our next service is."
-        />
-      )}
-
-      <div className="space-y-3">
-        {publicEvents.map((event) => (
-          <Link key={event.id} to={`/c/${slug}/events/${event.id}`}>
-            <Card padding="md" variant="elevated" className="hover:border-primary/40 transition-colors">
-              <div className="flex gap-4">
-                <div className="shrink-0 w-14 rounded-xl bg-primary-light dark:bg-primary/15 py-2 text-center">
-                  <p className="text-caption font-bold uppercase tracking-wider text-primary">
-                    {formatDateShort(event.startDateTime).split(' ')[0]}
-                  </p>
-                  <p className="font-display text-h2 leading-none text-primary">
-                    {new Date(event.startDateTime).getDate()}
-                  </p>
-                </div>
-
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-start justify-between gap-2 mb-1">
-                    <Text variant="h3" className="min-w-0">
-                      {event.title}
-                    </Text>
-                    <Badge variant="primary" size="sm" className="shrink-0 capitalize">
-                      {event.type}
-                    </Badge>
-                  </div>
-
-                  <Text variant="body-sm" color="muted" className="flex items-center gap-1.5">
-                    <Clock size={13} aria-hidden />
-                    {formatTime(event.startDateTime)}
-                  </Text>
-
-                  {event.location && (
-                    <Text variant="body-sm" color="muted" className="flex items-center gap-1.5 mt-0.5">
-                      <MapPin size={13} aria-hidden />
-                      {event.location}
-                    </Text>
-                  )}
-                </div>
-              </div>
-            </Card>
-          </Link>
-        ))}
-      </div>
+      <ReadOnlyCalendar
+        cal={cal}
+        hrefFor={(item) => `/c/${slug}/events/${item.eventId}`}
+        agendaEmpty={{
+          title: 'Nothing listed just now',
+          description: 'Get in touch and we will tell you when our next service is.',
+        }}
+        monthEmpty="Nothing is listed this month."
+        agendaStickyOffset="top-14" // sits under the site header
+      />
 
       <Card variant="flat" padding="lg" className="mt-8 text-center">
         <Text variant="h3" className="mb-2">

@@ -9,8 +9,17 @@ import { useCurrentUser } from '@/hooks/useAuthStore';
 import { eventsService } from '@/services/eventsService';
 import { membersService } from '@/services/membersService';
 import { financeService } from '@/services/financeService';
-import { getGreeting, formatCurrency, formatDateTime } from '@/lib/formatters';
+import { getGreeting, formatCurrency, formatDate, formatDateTime } from '@/lib/formatters';
 import { Avatar, Button, Card, Skeleton, Text } from '@/components/ui';
+import { useChurchTimeZone } from '@/hooks/useChurchTimeZone';
+import { eventWhen, upcomingByDate } from '@/components/events/eventOccurrence';
+import type { EventListItem } from '@/types';
+
+/** A repeating event is about its next date, in the church's zone. */
+function upcomingWhen(event: EventListItem, zone: string): string {
+  const when = eventWhen(event);
+  return event.isAllDay ? `${formatDate(when, 'en-US', zone)} · All day` : formatDateTime(when, 'en-US', zone);
+}
 
 export function PortalHome() {
   const user = useCurrentUser();
@@ -20,7 +29,10 @@ export function PortalHome() {
     queryKey: ['events', 'portal'],
     queryFn: () => eventsService.list({ upcoming: true }),
   });
-  const events = upcoming.filter((e) => e.isPublic).slice(0, 3);
+  // The server returns only what a member may see; members-only gatherings must not be hidden here.
+  // Soonest next date first, without finished series, before taking the first three.
+  const events = upcomingByDate(upcoming).slice(0, 3);
+  const zone = useChurchTimeZone();
 
   // The member record behind this login, if the account is linked to one —
   // what "my giving" actually is, rather than placeholder numbers.
@@ -94,7 +106,7 @@ export function PortalHome() {
               {events.map(event => (
                 <Card key={event.id} padding="md" className="min-w-[280px] snap-center shrink-0 flex flex-col">
                   <Text variant="label" color="primary" className="mb-2">
-                    {formatDateTime(event.startDateTime)}
+                    {upcomingWhen(event, zone)}
                   </Text>
                   <Text variant="h3" className="mb-1 line-clamp-1">{event.title}</Text>
                   <Text variant="body-sm" color="muted" className="mb-4 flex-1 line-clamp-2">

@@ -1,53 +1,36 @@
 /**
  * @file UpcomingEvents.tsx
- * @description Member view of what is coming up.
+ * @description The member's calendar: what is coming up at their church, as a
+ * month grid or an agenda.
  *
- * Every card is a real link to the gathering, and carries the one action a
- * member wants without opening it — adding it to their own calendar. The cards
- * used to be styled as clickable and do nothing, which teaches people the app
- * is broken faster than an error message would.
+ * The server decides what a member may see (published gatherings that are public,
+ * for members, or for a group they belong to), so nothing is filtered here. Every
+ * event is a real link to its page, where "Add to my calendar" lives. The month,
+ * view and type filter are in the URL, so a view can be shared and Back steps
+ * through months. Built from the shared calendar components.
  */
-import { useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { CalendarDays, CalendarPlus, Search } from 'lucide-react';
+import type { CalendarOccurrence } from '@/types';
 import { eventsService } from '@/services/eventsService';
-import { EventCard } from '@/components/events/EventCard';
-import { Button, EmptyState, Input, Text } from '@/components/ui';
+import { EVENT_TYPE_LABEL } from '@/lib/events';
+import { Text } from '@/components/ui';
+import { CalendarFilterBar, useCalendarWindow, type FilterKey } from '@/components/events/calendar';
+import { ReadOnlyCalendar } from '@/components/events/ReadOnlyCalendar';
+import { cn } from '@/lib/cn';
 
-/** Google Calendar template link — works on every platform without a download. */
-function calendarUrl(title: string, startIso: string, location?: string) {
-  const stamp = (iso: string) => `${iso.replace(/[-:]/g, '').split('.')[0]}Z`;
-  const end = new Date(new Date(startIso).getTime() + 90 * 60_000).toISOString();
-  const params = new URLSearchParams({
-    action: 'TEMPLATE',
-    text: title,
-    dates: `${stamp(startIso)}/${stamp(end)}`,
-    ...(location ? { location } : {}),
-  });
-  return `https://calendar.google.com/calendar/render?${params}`;
-}
+// Module constants: the hook needs a stable filterKeys array.
+const FILTER_KEYS: FilterKey[] = ['type'];
+const TYPE_OPTIONS = Object.entries(EVENT_TYPE_LABEL).map(([value, label]) => ({ value, label }));
+
+const sourceFor = (from: string, to: string, filters: Parameters<typeof eventsService.calendar>[2]) =>
+  eventsService.calendar(from, to, filters);
+const hrefFor = (item: CalendarOccurrence) => `/portal/events/${item.eventId}`;
 
 export function UpcomingEvents() {
-  const [query, setQuery] = useState('');
-
-  const { data: events = [], isLoading } = useQuery({
-    queryKey: ['events', 'portal'],
-    queryFn: () => eventsService.list({ upcoming: true }),
-  });
-
-  const visible = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return events
-      .filter((e) => e.isPublic)
-      .filter((e) =>
-        q
-          ? e.title.toLowerCase().includes(q) || (e.location ?? '').toLowerCase().includes(q)
-          : true,
-      );
-  }, [events, query]);
+  const cal = useCalendarWindow<CalendarOccurrence>({ scope: 'member', source: sourceFor, filterKeys: FILTER_KEYS });
 
   return (
-    <div className="w-full max-w-2xl mx-auto px-4 py-6 animate-fade-in">
+    // The agenda reads best narrow; the month grid earns the width from xl.
+    <div className={cn('w-full mx-auto px-4 py-6 animate-fade-in', cal.view === 'month' ? 'max-w-2xl xl:max-w-5xl' : 'max-w-2xl')}>
       <header className="mb-5">
         <Text variant="h1" className="mb-1">
           Events
@@ -57,50 +40,24 @@ export function UpcomingEvents() {
         </Text>
       </header>
 
-      <Input
-        type="search"
-        placeholder="Search events or locations"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        leftIcon={Search}
-        className="mb-5"
-      />
-
-      {isLoading && (
-        <Text variant="body" color="muted" className="text-center py-10">
-          Loading events…
-        </Text>
-      )}
-
-      {!isLoading && visible.length === 0 && (
-        <EmptyState
-          icon={CalendarDays}
-          title={query ? 'Nothing matches that' : 'Nothing coming up'}
-          description={
-            query
-              ? 'Try a different title or place.'
-              : 'When your church publishes a service it will appear here.'
-          }
-        />
-      )}
-
-      <div className="space-y-3">
-        {visible.map((event) => (
-          <EventCard
-            key={event.id}
-            event={event}
-            href={`/portal/events/${event.id}`}
-            typeLabel={event.type}
-            actions={
-              <a href={calendarUrl(event.title, event.startDateTime, event.location)} target="_blank" rel="noreferrer">
-                <Button variant="ghost" size="sm" leftIcon={CalendarPlus}>
-                  Add to calendar
-                </Button>
-              </a>
-            }
+      <ReadOnlyCalendar
+        cal={cal}
+        hrefFor={hrefFor}
+        filters={
+          <CalendarFilterBar
+            value={cal.filters}
+            onChange={cal.setFilter}
+            onClear={cal.clearFilters}
+            typeOptions={TYPE_OPTIONS}
           />
-        ))}
-      </div>
+        }
+        agendaEmpty={
+          cal.hasFilters
+            ? { title: 'Nothing matches that', description: 'Try a different type of event.' }
+            : { title: 'Nothing coming up', description: 'When your church publishes a service it will appear here.' }
+        }
+        monthEmpty={cal.hasFilters ? 'No events match this filter.' : 'No events this month.'}
+      />
     </div>
   );
 }

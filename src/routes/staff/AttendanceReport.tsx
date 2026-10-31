@@ -14,6 +14,8 @@ import { eventsService } from '@/services/eventsService';
 import { downloadCsv } from '@/lib/download';
 import { Avatar, Button, Card, SegmentedControl, StatTile, Text } from '@/components/ui';
 import { formatDate, formatPercent } from '@/lib/formatters';
+import { useChurchTimeZone } from '@/hooks/useChurchTimeZone';
+import { eventWhen } from '@/components/events/eventOccurrence';
 
 type Tab = 'absent' | 'present';
 
@@ -21,6 +23,7 @@ export function AttendanceReport() {
   const [searchParams] = useSearchParams();
   const eventId = searchParams.get('eventId');
   const [tab, setTab] = useState<Tab>('absent');
+  const zone = useChurchTimeZone();
 
   const { data: events = [] } = useQuery({
     queryKey: ['events', 'all'],
@@ -52,7 +55,7 @@ export function AttendanceReport() {
           Attendance report
         </Text>
         <Text variant="body" color="muted">
-          {activeEvent.title} · {formatDate(activeEvent.startDateTime)}
+          {activeEvent.title} · {formatDate(eventWhen(activeEvent), 'en-US', zone)}
         </Text>
       </header>
 
