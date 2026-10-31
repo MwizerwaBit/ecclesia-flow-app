@@ -69,13 +69,19 @@ const toCamel = (key: string) => key.replace(/_([a-z0-9])/g, (_, c: string) => c
 /** Keys that are data rather than field names (ids, "members:read", dates) are left alone. */
 const isFieldName = (key: string) => /^[A-Za-z][A-Za-z0-9_]*$/.test(key);
 
+/**
+ * Objects whose keys are what a person typed, not field names: a form's answers are keyed by the
+ * question's wording ("Allergies", "first_name"), and converting that would rename the question.
+ */
+const DATA_BAGS = new Set(['answers']);
+
 function convertKeys(value: unknown, convert: (key: string) => string): unknown {
   if (Array.isArray(value)) return value.map((item) => convertKeys(item, convert));
   if (value && typeof value === 'object' && Object.getPrototypeOf(value) === Object.prototype) {
     return Object.fromEntries(
       Object.entries(value as Record<string, unknown>).map(([k, v]) => [
         isFieldName(k) ? convert(k) : k,
-        convertKeys(v, convert),
+        DATA_BAGS.has(k) ? v : convertKeys(v, convert),
       ]),
     );
   }

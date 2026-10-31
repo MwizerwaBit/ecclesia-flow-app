@@ -20,6 +20,7 @@ import {
   CalendarCheck,
   CalendarDays,
   ClipboardCheck,
+  ClipboardList,
   FileBarChart,
   FileSpreadsheet,
   FolderOpen,
@@ -95,6 +96,7 @@ export const MODULES: AppModule[] = [
       { label: 'Events', path: 'events', icon: CalendarDays, section: 'Gatherings', permission: 'events:read' },
       { label: 'Calendar', path: 'events/calendar', icon: CalendarDays, section: 'Gatherings', permission: 'events:read' },
       { label: 'Reviews', path: 'events/reviews', icon: ClipboardCheck, section: 'Gatherings', permission: 'events:review' },
+      { label: 'Forms', path: 'forms', icon: ClipboardList, section: 'Gatherings', permission: 'forms:read' },
     ],
     routes: [
       { path: 'events', index: true, permission: 'events:read', component: 'EventsList', load: () => import('@/routes/staff/EventsList') },
@@ -104,6 +106,10 @@ export const MODULES: AppModule[] = [
       { path: 'events/:id/edit', permission: 'events:update', component: 'CreateEditEvent', load: () => import('@/routes/staff/CreateEditEvent') },
       { path: 'events/:id/responses', permission: 'events:update', component: 'EventResponses', load: () => import('@/routes/staff/events/EventResponses') },
       { path: 'events/reviews', permission: 'events:review', component: 'ReviewQueue', load: () => import('@/routes/staff/events/ReviewQueue') },
+      { path: 'forms', permission: 'forms:read', component: 'FormsList', load: () => import('@/routes/staff/forms/FormsList') },
+      { path: 'forms/new', permission: 'forms:manage', component: 'FormEditor', load: () => import('@/routes/staff/forms/FormEditor') },
+      { path: 'forms/:id', permission: 'forms:read', component: 'FormEditor', load: () => import('@/routes/staff/forms/FormEditor') },
+      { path: 'forms/:id/responses', permission: 'forms:responses', component: 'FormResponses', load: () => import('@/routes/staff/forms/FormResponses') },
     ],
   },
 

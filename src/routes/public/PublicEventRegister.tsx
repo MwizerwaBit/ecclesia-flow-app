@@ -11,12 +11,14 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { CalendarDays, CheckCircle2, Clock, MapPin, Repeat } from 'lucide-react';
 import { eventsService } from '@/services/eventsService';
 import type { RegistrationAnswers } from '@/types';
-import { Badge, Button, Card, Checkbox, EmptyState, Input, Select, Skeleton, Text } from '@/components/ui';
+import { Badge, Button, Card, EmptyState, Input, Skeleton, Text } from '@/components/ui';
+import { FormQuestionInputs } from '@/components/forms/FormQuestionInputs';
+import { cleanAnswers, missingRequired as findMissing } from '@/lib/forms';
 import { formatDate, formatTime } from '@/lib/formatters';
 import { usePublicChurchZone } from '@/components/events/usePublicChurchZone';
 import { describeRecurrence } from '@/components/events/workflow/recurrence';
 import { dayKeyInZone } from '@/lib/calendar';
-import { ApiError } from '@/services/adapter';
+import { describeError } from '@/lib/formErrors';
 
 export function PublicEventRegister() {
   const { slug = '', eventId = '' } = useParams();
@@ -41,19 +43,12 @@ export function PublicEventRegister() {
         respondentName: name.trim(),
         respondentEmail: email.trim() || undefined,
         respondentPhone: phone.trim() || undefined,
-        answers,
+        answers: cleanAnswers(event?.registrationFields ?? [], answers),
       }),
-    onError: (err) => setError(err instanceof ApiError ? err.message : 'Something went wrong — please try again.'),
+    onError: (err) => setError(describeError(err)),
   });
 
-  const missingRequired = useMemo(() => {
-    if (!event) return [];
-    return event.registrationFields.filter((f) => {
-      if (!f.required) return false;
-      const value = answers[f.label];
-      return value === undefined || (Array.isArray(value) ? value.length === 0 : value.trim().length === 0);
-    });
-  }, [event, answers]);
+  const missingRequired = useMemo(() => (event ? findMissing(event.registrationFields, answers) : []), [event, answers]);
 
   const canSubmit = name.trim().length > 0 && missingRequired.length === 0;
 
@@ -148,76 +143,47 @@ export function PublicEventRegister() {
         </div>
       </Card>
 
-      <Card padding="lg">
-        <Text variant="h3" className="mb-4">
-          Save your spot
-        </Text>
-        <form
-          className="space-y-4"
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (canSubmit) register.mutate();
-          }}
-        >
-          <Input autoComplete="name" label="Your name" autoFocus value={name} onChange={(e) => setName(e.target.value)} />
-          <Input label="Email (optional)" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-          <Input label="Phone (optional)" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
+      {!event.registrationOpen && (
+        <Card padding="lg">
+          <Text variant="h3" className="mb-1">
+            Sign-ups are closed
+          </Text>
+          <Text variant="body" color="muted">
+            The organisers aren’t taking more sign-ups for this gathering. Get in touch with them if you still want to come.
+          </Text>
+        </Card>
+      )}
 
-          {event.registrationFields.map((field) => (
-            <div key={field.id}>
-              {field.fieldType === 'text' && (
-                <Input
-                  label={field.required ? `${field.label} *` : field.label}
-                  value={(answers[field.label] as string) ?? ''}
-                  onChange={(e) => setAnswers((prev) => ({ ...prev, [field.label]: e.target.value }))}
-                />
-              )}
-              {field.fieldType === 'single_choice' && (
-                <Select
-                  label={field.required ? `${field.label} *` : field.label}
-                  value={(answers[field.label] as string) ?? ''}
-                  onChange={(e) => setAnswers((prev) => ({ ...prev, [field.label]: e.target.value }))}
-                  options={[{ value: '', label: 'Choose one' }, ...field.options.map((o) => ({ value: o, label: o }))]}
-                />
-              )}
-              {field.fieldType === 'checkbox' && (
-                <div className="space-y-1.5">
-                  <Text variant="label" color="muted" className="block">
-                    {field.required ? `${field.label} *` : field.label}
-                  </Text>
-                  {field.options.map((option) => {
-                    const selected = (answers[field.label] as string[] | undefined) ?? [];
-                    return (
-                      <Checkbox
-                        key={option}
-                        label={option}
-                        checked={selected.includes(option)}
-                        onChange={(e) =>
-                          setAnswers((prev) => {
-                            const current = (prev[field.label] as string[] | undefined) ?? [];
-                            const next = e.target.checked ? [...current, option] : current.filter((o) => o !== option);
-                            return { ...prev, [field.label]: next };
-                          })
-                        }
-                      />
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          ))}
+      {event.registrationOpen && (
+        <Card padding="lg">
+          <Text variant="h3" className="mb-4">
+            Save your spot
+          </Text>
+          <form
+            className="space-y-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (canSubmit) register.mutate();
+            }}
+          >
+            <Input autoComplete="name" label="Your name" autoFocus value={name} onChange={(e) => setName(e.target.value)} />
+            <Input label="Email (optional)" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+            <Input label="Phone (optional)" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} />
 
-          {error && (
-            <Text variant="body-sm" className="text-danger">
-              {error}
-            </Text>
-          )}
+            <FormQuestionInputs fields={event.registrationFields} answers={answers} onChange={setAnswers} />
 
-          <Button type="submit" variant="primary" size="lg" fullWidth disabled={!canSubmit} isLoading={register.isPending}>
-            I&rsquo;ll be there
-          </Button>
-        </form>
-      </Card>
+            {error && (
+              <Text variant="body-sm" className="text-danger">
+                {error}
+              </Text>
+            )}
+
+            <Button type="submit" variant="primary" size="lg" fullWidth disabled={!canSubmit} isLoading={register.isPending}>
+              I&rsquo;ll be there
+            </Button>
+          </form>
+        </Card>
+      )}
     </div>
   );
 }
