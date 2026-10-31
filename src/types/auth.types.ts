@@ -55,12 +55,23 @@ export interface AuthSession {
   expiresAt: number; // Unix timestamp
   /** True only when this sign-in passed a second factor; some actions require it. */
   mfaVerified?: boolean;
+  /** Minutes without activity before the app signs this session out (the server decides). */
+  idleTimeoutMinutes?: number;
   membershipId?: string;
   memberships?: MembershipSummary[];
   isImpersonating?: boolean;
   impersonatedOrgName?: string;
   impersonatedRole?: string;
   impersonationExpiresAt?: number;
+}
+
+/** What the server hands back when two-step sign-in is being set up. Shown once, never stored. */
+export interface MfaEnrolment {
+  /** The key to type in by hand. */
+  secret: string;
+  /** The otpauth:// address the QR code encodes. */
+  provisioningUri: string;
+  backupCodes: string[];
 }
 
 export interface LoginCredentials {

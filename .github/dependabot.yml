@@ -2,10 +2,19 @@ version: 2
 updates:
   - package-ecosystem: npm
     directory: /
+    target-branch: development
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    groups:
+      # react and react-dom must always be the same version; a lone bump of one
+      # breaks every component test ("Incompatible React versions").
+      react:
+        patterns:
+          - react
+          - react-dom
   - package-ecosystem: github-actions
     directory: /
+    target-branch: development
     schedule:
       interval: monthly

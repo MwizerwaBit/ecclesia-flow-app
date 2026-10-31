@@ -2,13 +2,38 @@
  * @file ErrorScreens.tsx
  * @description Common system and error screens.
  */
+import { type ReactNode } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { AlertOctagon, Clock, ShieldAlert, WifiOff } from 'lucide-react';
+import { SiteHeader } from '@/components/layout';
+import { useCurrentRole, useIsAuthenticated } from '@/hooks/useAuthStore';
+import { homePath } from '@/lib/home';
 import { Button, Card, Text } from '@/components/ui';
+
+/** Every error screen keeps the site header, so there is always a way home and a theme toggle. */
+function ErrorShell({ children }: { children: ReactNode }) {
+  return (
+    <div className="flex min-h-screen flex-col bg-background-light dark:bg-background-dark">
+      <SiteHeader />
+      <main className="flex flex-1 items-center justify-center p-6 text-center">{children}</main>
+    </div>
+  );
+}
+
+/** The button that leads out of an error: the dashboard when signed in, the landing page when not. */
+function HomeButton({ variant = 'primary' }: { variant?: 'primary' | 'secondary' | 'ghost' }) {
+  const isAuthenticated = useIsAuthenticated();
+  const role = useCurrentRole();
+  return (
+    <Link to={isAuthenticated ? homePath(role) : '/'}>
+      <Button variant={variant}>{isAuthenticated ? 'Go to your dashboard' : 'Go to the home page'}</Button>
+    </Link>
+  );
+}
 
 export function NotFound() {
   return (
-    <div className="flex flex-col items-center justify-center p-8 min-h-screen text-center bg-background-light dark:bg-background-dark">
+    <ErrorShell>
       <Card padding="lg" className="max-w-md w-full flex flex-col items-center gap-4">
         <div className="text-slate-400 mb-2">
           <AlertOctagon size={48} />
@@ -18,18 +43,16 @@ export function NotFound() {
           The page you are looking for doesn't exist or has been moved.
         </Text>
         <div className="mt-4">
-          <Link to="/">
-            <Button variant="primary">Return Home</Button>
-          </Link>
+          <HomeButton />
         </div>
       </Card>
-    </div>
+    </ErrorShell>
   );
 }
 
 export function Forbidden() {
   return (
-    <div className="flex flex-col items-center justify-center p-8 min-h-screen text-center bg-background-light dark:bg-background-dark">
+    <ErrorShell>
       <Card padding="lg" className="max-w-md w-full flex flex-col items-center gap-4">
         <div className="text-danger mb-2">
           <ShieldAlert size={48} />
@@ -39,18 +62,16 @@ export function Forbidden() {
           You don't have permission to access this page. Please contact your administrator if you believe this is an error.
         </Text>
         <div className="mt-4">
-          <Link to="/">
-            <Button variant="secondary">Return Home</Button>
-          </Link>
+          <HomeButton variant="secondary" />
         </div>
       </Card>
-    </div>
+    </ErrorShell>
   );
 }
 
 export function OfflineScreen() {
   return (
-    <div className="flex flex-col items-center justify-center p-8 min-h-[50vh] text-center">
+    <ErrorShell>
       <Card padding="lg" className="max-w-md w-full flex flex-col items-center gap-4">
         <div className="text-slate-400 mb-2">
           <WifiOff size={48} />
@@ -63,7 +84,7 @@ export function OfflineScreen() {
           <Button variant="primary" onClick={() => window.location.reload()}>Try Again</Button>
         </div>
       </Card>
-    </div>
+    </ErrorShell>
   );
 }
 
@@ -79,7 +100,7 @@ export function ServerError() {
   const errorId = searchParams.get('ref');
 
   return (
-    <div className="flex flex-col items-center justify-center p-8 min-h-[60vh] text-center">
+    <ErrorShell>
       <Card padding="lg" className="max-w-md w-full flex flex-col items-center gap-3">
         <div className="text-danger mb-2">
           <AlertOctagon size={48} />
@@ -104,12 +125,10 @@ export function ServerError() {
           <Button variant="primary" onClick={() => window.location.reload()}>
             Try again
           </Button>
-          <Link to="/staff/dashboard">
-            <Button variant="ghost">Back to dashboard</Button>
-          </Link>
+          <HomeButton variant="ghost" />
         </div>
       </Card>
-    </div>
+    </ErrorShell>
   );
 }
 
@@ -119,7 +138,7 @@ export function ServerError() {
  */
 export function SubscriptionExpired() {
   return (
-    <div className="flex flex-col items-center justify-center p-8 min-h-[60vh] text-center">
+    <ErrorShell>
       <Card padding="lg" className="max-w-md w-full flex flex-col items-center gap-3">
         <div className="text-warning mb-2">
           <Clock size={48} />
@@ -147,6 +166,6 @@ export function SubscriptionExpired() {
           Your data is kept for 90 days. You can export all of it at any time.
         </Text>
       </Card>
-    </div>
+    </ErrorShell>
   );
 }

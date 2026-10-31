@@ -9,6 +9,7 @@
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Menu } from 'lucide-react';
 import { Text } from '@/components/ui';
+import { ThemeToggle } from './ThemeToggle';
 
 interface TopHeaderProps {
   title: string;
@@ -44,13 +45,12 @@ export function TopHeader({ title, leftAction, onMenuClick, rightActions }: TopH
         <Text variant="h3" className="ml-2 truncate">{title}</Text>
       </div>
 
-      {rightActions && rightActions.length > 0 && (
-        <div className="flex items-center gap-2">
-          {rightActions.map((action, i) => (
-            <div key={i}>{action}</div>
-          ))}
-        </div>
-      )}
+      <div className="flex items-center gap-1">
+        <ThemeToggle className="size-10" />
+        {rightActions?.map((action, i) => (
+          <div key={i}>{action}</div>
+        ))}
+      </div>
     </header>
   );
 }

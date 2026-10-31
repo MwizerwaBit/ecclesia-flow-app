@@ -11,6 +11,7 @@ import { type ReactNode } from 'react';
 import { Search } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { Input, Text } from '@/components/ui';
+import { ThemeToggle } from './ThemeToggle';
 import { UserMenu } from './UserMenu';
 import { NotificationBell } from '@/components/notifications';
 
@@ -92,6 +93,7 @@ export function TopBar({
       <div className="flex items-center gap-3 shrink-0 border-l border-slate-200 dark:border-slate-800 pl-4">
         {/* A platform admin belongs to no church, so has no notifications. */}
         {!isPlatform && <NotificationBell variant="dropdown" />}
+        <ThemeToggle />
 
         {user && profileHref && (
           <UserMenu

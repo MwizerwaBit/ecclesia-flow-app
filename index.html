@@ -9,6 +9,17 @@
     <meta name="theme-color" content="#4338CA" />
     <meta name="description" content="EcclesiaFlow — a calm, offline-ready church management companion." />
     <title>EcclesiaFlow</title>
+    <script>
+      // Set the theme before first paint so there is no flash of the wrong one.
+      // Mirrors src/hooks/useThemeStore.ts (same localStorage key and shape).
+      try {
+        var stored = JSON.parse(localStorage.getItem('ecclesia-theme') || '{}');
+        var pref = (stored.state && stored.state.preference) || 'system';
+        var dark = pref === 'dark' || (pref === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.classList.toggle('dark', dark);
+        document.documentElement.style.colorScheme = dark ? 'dark' : 'light';
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

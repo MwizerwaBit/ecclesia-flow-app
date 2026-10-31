@@ -18,8 +18,8 @@
  */
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { AuthSession, LoginCredentials } from '@/types';
-import { authService } from '@/services/authService';
+import type { AuthSession, ImpersonationSession, LoginCredentials } from '@/types';
+import { authService, impersonationSession } from '@/services/authService';
 import { API_MODE, ApiError, refreshAccessToken, registerAuthHandlers, setAccessToken } from '@/services/adapter';
 
 interface AuthStore {
@@ -28,6 +28,8 @@ interface AuthStore {
   error: string | null;
   /** Set when sign-in passed the password and now needs the second factor. Memory only. */
   mfaChallengeToken: string | null;
+  /** The platform admin's own session while they are impersonating a church. Memory only. */
+  impersonatedFrom: AuthSession | null;
 
   // Actions
   /** Resolves 'mfa' when a code is still needed, 'signed-in' otherwise. */
@@ -40,8 +42,11 @@ interface AuthStore {
   clearError: () => void;
 
   // Impersonation
-  startImpersonation: (session: AuthSession) => void;
+  startImpersonation: (impersonation: ImpersonationSession) => void;
+  /** Puts the platform admin's own session back. */
   endImpersonation: () => void;
+  /** Records on the signed-in profile that two-step sign-in was turned on or off. */
+  setMfaEnabled: (enabled: boolean) => void;
 }
 
 /** Friendly copy for the server's machine-readable auth error codes. */
@@ -66,6 +71,7 @@ export const useAuthStore = create<AuthStore>()(
       isLoading: false,
       error: null,
       mfaChallengeToken: null,
+      impersonatedFrom: null,
 
       login: async (credentials) => {
         set({ isLoading: true, error: null, mfaChallengeToken: null });
@@ -90,7 +96,7 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       logout: async () => {
-        set({ session: null, error: null, mfaChallengeToken: null });
+        set({ session: null, error: null, mfaChallengeToken: null, impersonatedFrom: null });
         await authService.logout();
       },
 
@@ -101,29 +107,38 @@ export const useAuthStore = create<AuthStore>()(
 
       clearLocalSession: () => {
         setAccessToken(null);
-        set({ session: null, mfaChallengeToken: null });
+        set({ session: null, mfaChallengeToken: null, impersonatedFrom: null });
       },
 
       clearError: () => set({ error: null }),
 
-      startImpersonation: (session) => set({ session }),
+      startImpersonation: (impersonation) => {
+        const admin = get().session;
+        if (!admin || admin.isImpersonating) return;
+        set({ session: impersonationSession(impersonation, admin), impersonatedFrom: admin });
+      },
+
+      setMfaEnabled: (enabled) => {
+        const current = get().session;
+        if (current) set({ session: { ...current, user: { ...current.user, mfaEnabled: enabled } } });
+      },
 
       endImpersonation: () => {
-        const current = get().session;
-        if (current?.isImpersonating) {
-          // Restore original session — in real impl, use stored original token
-          set({ session: { ...current, isImpersonating: false } });
-        }
+        const admin = get().impersonatedFrom;
+        if (!admin) return;
+        setAccessToken(admin.accessToken, admin.expiresAt);
+        set({ session: admin, impersonatedFrom: null });
       },
     }),
     {
       name: 'ecclesia-auth',
       // Only the session's display state is persisted — and in REST mode
       // never the access token (see the file header).
-      partialize: (state) => ({
-        session:
-          state.session && API_MODE === 'rest' ? { ...state.session, accessToken: '' } : state.session,
-      }),
+      // A reload during impersonation comes back as the platform admin, never as the church.
+      partialize: (state) => {
+        const session = state.impersonatedFrom ?? state.session;
+        return { session: session && API_MODE === 'rest' ? { ...session, accessToken: '' } : session };
+      },
     },
   ),
 );
@@ -137,8 +152,11 @@ if (API_MODE === 'rest') {
       if (!useAuthStore.getState().session) return false;
       try {
         const session = await authService.refresh();
-        const previous = useAuthStore.getState().session;
-        useAuthStore.setState({ session: { ...session, isImpersonating: previous?.isImpersonating } });
+        const impersonating = useAuthStore.getState().session?.isImpersonating;
+        useAuthStore.setState({ session, impersonatedFrom: null });
+        // The church's token cannot be renewed (the refresh cookie is the admin's own),
+        // so an expired impersonation ends here and the admin lands back on the platform.
+        if (impersonating) window.location.assign('/platform/orgs');
         return true;
       } catch {
         return false;
