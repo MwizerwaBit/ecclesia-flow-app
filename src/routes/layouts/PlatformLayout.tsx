@@ -110,7 +110,7 @@ export function PlatformLayout() {
           />
         </div>
 
-        <TopBar user={signedInAs} profileHref="/platform/account" loginPath="/platform/login" notificationCount={1} />
+        <TopBar user={signedInAs} profileHref="/platform/account" loginPath="/platform/login" variant="platform" />
 
         <div className="flex-1 overflow-y-auto">
           <Outlet />
