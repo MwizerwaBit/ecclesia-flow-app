@@ -27,6 +27,7 @@ import { ResetPassword } from './auth/ResetPassword';
 import { MfaChallenge } from './auth/MfaChallenge';
 
 import { NotFound, Forbidden, OfflineScreen, ServerError, SubscriptionExpired } from './system/ErrorScreens';
+import { NotificationsEntry } from './notifications/NotificationScreens';
 
 /**
  * Adapts a named export to the `{ Component }` shape the router's `lazy` expects.
@@ -116,9 +117,10 @@ const memberRoutes = {
     { path: 'events/:id', lazy: screen(() => import('./portal/MemberEventDetail'), 'MemberEventDetail') },
     { path: 'groups', lazy: screen(() => import('./portal/MyGroups'), 'MyGroups') },
     { path: 'groups/:id', lazy: screen(() => import('./portal/MyGroupDetail'), 'MyGroupDetail') },
+    { path: 'notifications', lazy: screen(() => import('./notifications/NotificationScreens'), 'NotificationsScreen') },
     {
-      path: 'notifications',
-      lazy: screen(() => import('./portal/NotificationInbox'), 'NotificationInbox'),
+      path: 'notifications/preferences',
+      lazy: screen(() => import('./notifications/NotificationScreens'), 'NotificationSettingsScreen'),
     },
     {
       path: 'announcements',
@@ -134,6 +136,7 @@ const staffRoutes = {
   children: [
     { path: 'dashboard', lazy: screen(() => import('./staff/StaffDashboard'), 'StaffDashboard') },
     { path: 'account', lazy: screen(() => import('./account/MyAccount'), 'MyAccount') },
+    { path: 'notifications', lazy: screen(() => import('./notifications/NotificationScreens'), 'NotificationsScreen') },
 
     // Everything else on this surface comes from the module registry, so a
     // module is added by editing src/modules/registry.ts and nothing here.
@@ -148,6 +151,11 @@ const boardRoutes = {
   children: [
     { path: 'dashboard', lazy: screen(() => import('./board/NetworkDashboard'), 'NetworkDashboard') },
     { path: 'account', lazy: screen(() => import('./account/MyAccount'), 'MyAccount') },
+    { path: 'notifications', lazy: screen(() => import('./notifications/NotificationScreens'), 'NotificationsScreen') },
+    {
+      path: 'notifications/preferences',
+      lazy: screen(() => import('./notifications/NotificationScreens'), 'NotificationSettingsScreen'),
+    },
     { path: 'hierarchy', lazy: screen(() => import('./staff/hierarchy/HierarchyTreeView'), 'HierarchyTreeView') },
     { path: 'units/:id', lazy: screen(() => import('./staff/hierarchy/UnitDetail'), 'UnitDetail') },
     { path: 'organisations', lazy: screen(() => import('./platform/OrganisationsList'), 'OrganisationsList') },
@@ -186,6 +194,13 @@ const platformRoutes = {
 };
 
 // --- Error Pages ---
+// Links that can't know who opens them (the footer of a notification email) land here and are
+// sent on to the signed-in person's own area.
+const notificationEntryRoutes = [
+  { path: '/notifications', element: <NotificationsEntry to="inbox" /> },
+  { path: '/notifications/preferences', element: <NotificationsEntry to="preferences" /> },
+];
+
 const errorRoutes = [
   { path: '/403', element: <Forbidden /> },
   { path: '/404', element: <NotFound /> },
@@ -199,6 +214,7 @@ export const router = createBrowserRouter([
   marketingRoutes,
   publicRoutes,
   onboardingRoutes,
+  ...notificationEntryRoutes,
   memberRoutes,
   staffRoutes,
   boardRoutes,

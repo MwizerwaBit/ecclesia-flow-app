@@ -232,6 +232,20 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
   return parseBody<T>(await authorizedResponse(path, options));
 }
 
+/**
+ * One page of a list and the total across all pages (X-Total-Count), for screens that load
+ * "more" as you go instead of everything at once.
+ */
+export async function apiRequestPage<T>(
+  path: string,
+  options: ApiRequestOptions = {},
+): Promise<{ items: T[]; total: number }> {
+  const res = await authorizedResponse(path, options);
+  const items = (await parseBody<T[]>(res)) ?? [];
+  const total = Number(res.headers.get('X-Total-Count'));
+  return { items, total: Number.isFinite(total) && total >= items.length ? total : items.length };
+}
+
 /** The API's largest page; list endpoints answer at most this many rows per request. */
 export const MAX_PAGE_SIZE = 500;
 /** A backstop against a runaway loop (10 000 rows is far beyond any church's list). */

@@ -13,10 +13,12 @@ import { useModules } from '@/modules/useModules';
 import { buildStaffNav } from '@/modules/nav';
 import { BillingBanner, SideNav, BottomTabBar, NavDrawer, TopBar, TopHeader, PageGuide, UserMenu } from '@/components/layout';
 import { useAccess } from '@/hooks/useAccess';
+import { NotificationBell } from '@/components/notifications';
 
 
 /** Ordered longest-first; the first matching prefix names the screen. */
 const SECTION_TITLES: Array<[string, string]> = [
+  ['/staff/notifications', 'Notifications'],
   ['/staff/members/visitor-followup', 'Follow-ups'],
   ['/staff/members/not-seen', 'Not seen recently'],
   ['/staff/members/export', 'Export directory'],
@@ -115,11 +117,14 @@ export function StaffLayout() {
             title={getRouteTitle()}
             leftAction="menu"
             onMenuClick={() => setMenuOpen(true)}
-            rightActions={[<UserMenu key="account" user={signedInAs} profileHref="/staff/account" loginPath="/login" display="avatar" />]}
+            rightActions={[
+              <NotificationBell key="notifications" variant="link" />,
+              <UserMenu key="account" user={signedInAs} profileHref="/staff/account" loginPath="/login" display="avatar" />,
+            ]}
           />
         </div>
 
-        <TopBar user={signedInAs} profileHref="/staff/account" loginPath="/login" notificationCount={2} />
+        <TopBar user={signedInAs} profileHref="/staff/account" loginPath="/login" />
 
         {/* The tab bar is fixed over this column, so the column reserves
             room for it. Screens inside do not repeat this. */}

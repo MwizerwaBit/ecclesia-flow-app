@@ -3,6 +3,7 @@
  * @description Member profile view allowing users to update their details and preferences.
  */
 import { useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { User, Mail, Phone, MapPin, Settings, LogOut, Camera, Loader2 } from 'lucide-react';
 import { useAuthStore, useCurrentUser } from '@/hooks/useAuthStore';
@@ -17,6 +18,7 @@ function formatAddress(address: { line1: string; line2?: string; city: string; s
 }
 
 export function MyProfile() {
+  const navigate = useNavigate();
   const user = useCurrentUser();
   const { logout } = useAuthStore();
   const queryClient = useQueryClient();
@@ -196,7 +198,10 @@ export function MyProfile() {
         <section>
           <Text variant="h3" className="mb-3">Preferences</Text>
           <Card padding="none" className="overflow-hidden">
-            <button className="w-full flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors border-b border-slate-100 dark:border-slate-800">
+            <button
+              onClick={() => navigate('/portal/notifications/preferences')}
+              className="w-full flex items-center justify-between p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors border-b border-slate-100 dark:border-slate-800"
+            >
               <div className="flex items-center gap-3">
                 <Settings size={20} className="text-slate-500" />
                 <Text variant="body" className="font-medium">Notification Settings</Text>
