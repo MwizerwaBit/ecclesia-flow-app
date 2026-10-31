@@ -9,6 +9,7 @@ import type {
   DomainStatus,
   DataErasureRequest,
   FeatureFlag,
+  ImpersonationSession,
   OrgListItem,
   OrgStatus,
   PlatformMetrics,
@@ -100,6 +101,27 @@ export const platformService = {
     return apiRequest<OrgListItem>(`/platform/orgs/${id}/status`, {
       method: 'POST',
       body: JSON.stringify({ status, reason }),
+    });
+  },
+
+  /**
+   * Starts a support session in a church. The token that comes back is the church's, scoped
+   * to the role asked for, with pastoral notes and financial exports removed, and it expires.
+   */
+  async startImpersonation(orgId: string, role: string): Promise<ImpersonationSession> {
+    if (API_MODE === 'mock') {
+      const org = MOCK_ORGS.find((o) => o.id === orgId) ?? MOCK_ORGS[0];
+      return mockResponse<ImpersonationSession>({
+        orgId: org.id,
+        orgName: org.displayName,
+        role,
+        token: 'mock-impersonation-token',
+        expiresAt: Date.now() + 3_600_000,
+      });
+    }
+    return apiRequest<ImpersonationSession>(`/platform/orgs/${orgId}/impersonate`, {
+      method: 'POST',
+      body: JSON.stringify({ roleToImpersonate: role }),
     });
   },
 

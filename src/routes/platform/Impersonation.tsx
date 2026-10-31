@@ -8,10 +8,13 @@
  * access that nobody can audit is not support access, it is a back door.
  */
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Ban, Eye, Lock, Mail, ShieldAlert, Timer } from 'lucide-react';
 import { platformService } from '@/services/platformService';
+import { useAuthStore } from '@/hooks/useAuthStore';
+import { homePath } from '@/lib/home';
+import { errorMessage } from '@/lib/errors';
 import { Button, Card, Select, Text } from '@/components/ui';
 
 const IMPERSONATABLE_ROLES = [
@@ -25,7 +28,7 @@ const HARD_LIMITS = [
   { icon: Lock, label: 'Pastoral notes stay sealed', detail: 'The confidential permission is never granted.' },
   { icon: Ban, label: 'No financial exports', detail: 'Giving data cannot leave the account.' },
   { icon: Ban, label: 'No deletions', detail: 'Destructive actions are blocked outright.' },
-  { icon: Timer, label: 'One hour maximum', detail: 'The token expires and cannot be renewed.' },
+  { icon: Timer, label: 'Time-limited', detail: 'The token expires within minutes and cannot be renewed.' },
   { icon: Mail, label: 'The church is told', detail: 'Their admin is emailed that a session was opened.' },
 ];
 
@@ -43,6 +46,16 @@ export function Impersonation() {
 
   const activeOrgId = orgId || orgs[0]?.id || '';
   const org = orgs.find((o) => o.id === activeOrgId);
+
+  const start = useMutation({
+    mutationFn: () => platformService.startImpersonation(activeOrgId, role),
+    meta: { inline: true },
+    onSuccess: (impersonation) => {
+      useAuthStore.getState().startImpersonation(impersonation);
+      // The store now holds the church's session, so home is the church's home for that role.
+      navigate(homePath(useAuthStore.getState().session?.user.role));
+    },
+  });
 
   return (
     <div className="w-full max-w-2xl mx-auto px-4 py-6 animate-fade-in space-y-5">
@@ -114,10 +127,19 @@ export function Impersonation() {
         fullWidth
         leftIcon={Eye}
         disabled={!activeOrgId}
-        onClick={() => navigate(role === 'member' ? '/portal' : '/staff/dashboard')}
+        isLoading={start.isPending}
+        onClick={() => start.mutate()}
       >
         Start impersonating {org?.displayName ?? ''}
       </Button>
+
+      {start.isError && (
+        <div role="alert">
+          <Text variant="body-sm" className="text-danger">
+            {errorMessage(start.error)}
+          </Text>
+        </div>
+      )}
 
       <Button variant="ghost" fullWidth onClick={() => navigate('/platform/dashboard')}>
         Cancel

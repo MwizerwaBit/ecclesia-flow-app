@@ -11,6 +11,7 @@ import { Building2, LogOut, Mail, ShieldCheck, UserRound } from 'lucide-react';
 import { useCurrentUser } from '@/hooks/useAuthStore';
 import { useSignOut } from '@/hooks/useSignOut';
 import { Avatar, Button, Card, Text } from '@/components/ui';
+import { TwoStepSignIn } from '@/components/account/TwoStepSignIn';
 
 const ROLE_LABEL: Record<string, string> = {
   member: 'Member',
@@ -56,6 +57,8 @@ export function MyAccount() {
         <Row icon={UserRound} label="Role">{ROLE_LABEL[user.role] ?? user.role}</Row>
         <Row icon={ShieldCheck} label="Two-step sign-in">{user.mfaEnabled ? 'On' : 'Off'}</Row>
       </Card>
+
+      {isPlatform && <TwoStepSignIn />}
 
       <div className="space-y-2">
         {!isPlatform && (

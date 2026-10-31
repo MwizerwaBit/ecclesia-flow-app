@@ -3,7 +3,8 @@
  * @description Domain types for Organisations, Hierarchy, and Platform Admin.
  */
 
-export type OrgStatus = 'trial' | 'active' | 'suspended' | 'canceled';
+/** 'pending' is a church that registered but has not been activated or paid yet. */
+export type OrgStatus = 'pending' | 'trial' | 'active' | 'suspended' | 'canceled';
 export type OrgTier = 'free' | 'seed' | 'parish' | 'growth' | 'diocese' | 'enterprise';
 export type DomainStatus = 'pending_verification' | 'active' | 'failed' | 'suspended';
 
@@ -121,6 +122,7 @@ export interface ImpersonationSession {
   orgName: string;
   role: string;
   token: string;
+  /** Milliseconds since the epoch. */
   expiresAt: number;
 }
 
