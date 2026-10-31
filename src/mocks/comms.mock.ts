@@ -179,6 +179,15 @@ export const PERMISSION_CATALOGUE: Array<{
     ],
   },
   {
+    module: 'Forms',
+    description: 'Forms people fill in, and their responses',
+    permissions: [
+      { key: 'forms:read', label: 'View forms and their questions' },
+      { key: 'forms:manage', label: 'Create, edit, publish and close forms' },
+      { key: 'forms:responses', label: 'Read and export form responses', sensitive: true },
+    ],
+  },
+  {
     module: 'Administration',
     description: 'Team, roles and organisation settings',
     permissions: [

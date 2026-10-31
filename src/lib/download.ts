@@ -58,6 +58,11 @@ export function downloadCsv<T>(
   triggerDownload(new Blob([csv], { type: 'text/csv;charset=utf-8' }), `${filename}-${stamp}.csv`);
 }
 
+/** Save a file the server produced (a CSV export), under the name given. */
+export function saveBlob(blob: Blob, filename: string): void {
+  triggerDownload(blob, filename);
+}
+
 /** Download an object as formatted JSON — used for whole-organisation exports. */
 export function downloadJson(filename: string, data: unknown): void {
   const stamp = new Date().toISOString().slice(0, 10);
