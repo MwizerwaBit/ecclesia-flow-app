@@ -8,15 +8,20 @@
 import { useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { CalendarDays, CheckCircle2, Clock, MapPin } from 'lucide-react';
+import { CalendarDays, CheckCircle2, Clock, MapPin, Repeat } from 'lucide-react';
 import { eventsService } from '@/services/eventsService';
 import type { RegistrationAnswers } from '@/types';
 import { Badge, Button, Card, Checkbox, EmptyState, Input, Select, Skeleton, Text } from '@/components/ui';
 import { formatDate, formatTime } from '@/lib/formatters';
+import { usePublicChurchZone } from '@/components/events/usePublicChurchZone';
+import { describeRecurrence } from '@/components/events/workflow/recurrence';
+import { dayKeyInZone } from '@/lib/calendar';
 import { ApiError } from '@/services/adapter';
 
 export function PublicEventRegister() {
   const { slug = '', eventId = '' } = useParams();
+  // The church's zone, so a 9:00 service reads 9:00 to a visitor anywhere.
+  const zone = usePublicChurchZone(slug);
 
   const { data: event, isLoading } = useQuery({
     queryKey: ['public', 'event', slug, eventId],
@@ -97,6 +102,11 @@ export function PublicEventRegister() {
     );
   }
 
+  // A repeating event is about its next date, not the one it started on.
+  const when = event.nextOccurrence ?? event.startDateTime;
+  const repeats = event.isRecurring || Boolean(event.recurrenceRule);
+  const repeatText = event.recurrenceRule ? describeRecurrence(event.recurrenceRule, zone, dayKeyInZone(event.startDateTime, zone)) : 'Repeats';
+
   return (
     <div className="w-full max-w-xl mx-auto px-4 py-12 animate-fade-in">
       <Link to={`/c/${slug}/calendar`} className="text-body-sm text-slate-500 hover:text-primary transition-colors mb-6 inline-block">
@@ -119,11 +129,17 @@ export function PublicEventRegister() {
         )}
         <div className="space-y-2">
           <Text variant="body" className="flex items-center gap-2">
-            <CalendarDays size={16} className="text-slate-400 shrink-0" aria-hidden /> {formatDate(event.startDateTime)}
+            <CalendarDays size={16} className="text-slate-400 shrink-0" aria-hidden /> {formatDate(when, 'en-US', zone)}
           </Text>
           <Text variant="body" className="flex items-center gap-2">
-            <Clock size={16} className="text-slate-400 shrink-0" aria-hidden /> {formatTime(event.startDateTime)}
+            <Clock size={16} className="text-slate-400 shrink-0" aria-hidden />{' '}
+            {event.isAllDay ? 'All day' : formatTime(when, 'en-US', zone)}
           </Text>
+          {repeats && (
+            <Text variant="body" className="flex items-center gap-2">
+              <Repeat size={16} className="text-slate-400 shrink-0" aria-hidden /> {repeatText}
+            </Text>
+          )}
           {event.location && (
             <Text variant="body" className="flex items-center gap-2">
               <MapPin size={16} className="text-slate-400 shrink-0" aria-hidden /> {event.location}

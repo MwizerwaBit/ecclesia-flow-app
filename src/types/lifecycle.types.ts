@@ -49,6 +49,7 @@ export type OrgProfileUpdate = Partial<
     | 'region'
     | 'website'
     | 'primaryColor'
+    | 'timezone'
   >
 >;
 
@@ -184,6 +185,8 @@ export interface PaymentInstructions {
   months: number;
   amountCents: number;
   currency: string;
+  /** The price in each currency this church may pay in; the first is the default. */
+  options: { currency: string; amountCents: number }[];
 }
 
 export interface BillingOverview {

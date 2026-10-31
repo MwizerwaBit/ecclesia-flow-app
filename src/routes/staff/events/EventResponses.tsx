@@ -14,10 +14,13 @@ import { ArrowLeft, Download, Inbox, Mail, Phone } from 'lucide-react';
 import { eventsService } from '@/services/eventsService';
 import { downloadCsv } from '@/lib/download';
 import { Button, Card, EmptyState, Skeleton, Text } from '@/components/ui';
+import { ErrorNotice } from '@/components/feedback/ErrorNotice';
+import { useChurchTimeZone } from '@/hooks/useChurchTimeZone';
 import { formatDateTime } from '@/lib/formatters';
 
 export function EventResponses() {
   const { id = '' } = useParams();
+  const zone = useChurchTimeZone();
 
   const { data: event } = useQuery({
     queryKey: ['event', id],
@@ -31,7 +34,13 @@ export function EventResponses() {
     enabled: Boolean(id),
   });
 
-  const { data: responses = [], isLoading } = useQuery({
+  const {
+    data: responses = [],
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ['events', id, 'responses'],
     queryFn: () => eventsService.listResponses(id),
     enabled: Boolean(id),
@@ -60,7 +69,7 @@ export function EventResponses() {
         ['Name', (r) => r.respondentName],
         ['Email', (r) => r.respondentEmail],
         ['Phone', (r) => r.respondentPhone],
-        ['Submitted', (r) => formatDateTime(r.createdAt)],
+        ['Submitted', (r) => formatDateTime(r.createdAt, 'en-US', zone)],
         ...columns.map((label): [string, (r: (typeof responses)[number]) => string] => [
           label,
           (r) => formatAnswer(r.answers[label]),
@@ -85,7 +94,9 @@ export function EventResponses() {
               Responses
             </Text>
             <Text variant="body" color="muted">
-              {responses.length} {responses.length === 1 ? 'person has' : 'people have'} registered.
+              {isLoading || isError
+                ? 'Who has registered through the public link.'
+                : `${responses.length} ${responses.length === 1 ? 'person has' : 'people have'} registered.`}
             </Text>
           </div>
           <Button variant="secondary" leftIcon={Download} onClick={exportCsv} disabled={responses.length === 0}>
@@ -94,14 +105,25 @@ export function EventResponses() {
         </div>
       </header>
 
-      {isLoading && (
-        <div className="space-y-3">
-          <Skeleton className="h-20 rounded-xl" />
-          <Skeleton className="h-20 rounded-xl" />
-        </div>
-      )}
+      <div aria-live="polite" aria-busy={isLoading}>
+        {isLoading && (
+          <div className="space-y-3" role="status" aria-label="Loading responses">
+            <Skeleton className="h-20 rounded-xl" />
+            <Skeleton className="h-20 rounded-xl" />
+          </div>
+        )}
 
-      {!isLoading && responses.length === 0 && (
+        {isError && (
+          <div className="space-y-3">
+            <ErrorNotice error={error} />
+            <Button variant="secondary" onClick={() => void refetch()}>
+              Try again
+            </Button>
+          </div>
+        )}
+      </div>
+
+      {!isLoading && !isError && responses.length === 0 && (
         <EmptyState
           icon={Inbox}
           title="No responses yet"
@@ -115,7 +137,7 @@ export function EventResponses() {
             <div className="flex items-start justify-between gap-2">
               <Text variant="h3">{r.respondentName}</Text>
               <Text variant="caption" color="muted" className="shrink-0">
-                {formatDateTime(r.createdAt)}
+                {formatDateTime(r.createdAt, 'en-US', zone)}
               </Text>
             </div>
             <div className="flex flex-wrap gap-x-4 gap-y-1">
@@ -131,7 +153,7 @@ export function EventResponses() {
               )}
             </div>
             {columns.length > 0 && (
-              <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1.5 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <dl className="grid grid-cols-1 lg:grid-cols-2 gap-x-4 gap-y-1.5 pt-2 border-t border-slate-100 dark:border-slate-800">
                 {columns
                   .filter((label) => r.answers[label] !== undefined)
                   .map((label) => (

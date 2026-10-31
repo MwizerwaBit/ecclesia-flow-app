@@ -65,6 +65,9 @@ export interface PublicEvent {
   endDateTime: string | null;
   nextOccurrence: string | null;
   isRecurring: boolean;
+  /** The repeat rule, once the public API sends it; until then a repeating event just says it repeats. */
+  recurrenceRule?: string | null;
+  isAllDay?: boolean;
   coverImageUrl: string | null;
   theme: EventTheme;
 }
@@ -127,8 +130,10 @@ export interface ChurchEvent {
   endDateTime?: string;
   isRecurring: boolean;
   recurrenceRule?: string; // iCalendar RRULE
+  /** Covers whole days in the church's time zone; start/end are that zone's midnights. */
+  isAllDay?: boolean;
   status: EventStatus;
-  unitId?: string;
+  unitId?: string | null;
   unitName?: string;
   attendanceMode: AttendanceMode;
   isPublic: boolean;
@@ -144,6 +149,8 @@ export interface ChurchEvent {
   reviews?: EventReview[];
   /** The next dozen start times for a repeating event. */
   upcomingOccurrences?: string[];
+  /** The next date of a repeating event (null once the series has ended); absent on older responses. */
+  nextOccurrence?: string | null;
   createdById: string;
   createdAt: string;
   updatedAt: string;
@@ -168,6 +175,7 @@ export interface EventListItem {
   recurrenceRule?: string | null;
   nextOccurrence?: string | null;
   pendingReviews?: number;
+  isAllDay?: boolean;
 }
 
 export interface AttendanceRecord {
@@ -217,4 +225,104 @@ export interface HeadcountEntry {
   adults: number;
   children: number;
   total: number;
+}
+
+// ─── Calendar ─────────────────────────────────────────────────────────────────
+
+/**
+ * One dated appearance of an event, from GET /events/calendar. Times are UTC
+ * instants; place them on a day with the church's time zone (`CalendarWindow.timezone`).
+ * `eventId` + `occurrenceStart` identify it (a repeating event has many).
+ */
+export interface CalendarOccurrence {
+  eventId: string;
+  title: string;
+  type: EventType;
+  status: EventStatus;
+  visibility: EventVisibility;
+  unitId: string | null;
+  groupId: string | null;
+  groupName: string | null;
+  location: string | null;
+  occurrenceStart: string;
+  occurrenceEnd: string | null;
+  isAllDay: boolean;
+  isRecurring: boolean;
+  accentColor: string | null;
+}
+
+export interface CalendarWindow {
+  /** The church's IANA time zone, e.g. "Africa/Kigali". */
+  timezone: string;
+  windowStart: string;
+  windowEnd: string;
+  /** More dates exist than were returned: narrow the window or the filters. */
+  truncated: boolean;
+  occurrences: CalendarOccurrence[];
+}
+
+/** What the public calendar shows: no status, group, unit or visibility. */
+export interface PublicCalendarOccurrence {
+  eventId: string;
+  title: string;
+  type: EventType;
+  location: string | null;
+  occurrenceStart: string;
+  occurrenceEnd: string | null;
+  isAllDay: boolean;
+  isRecurring: boolean;
+  accentColor: string | null;
+}
+
+export interface PublicCalendarWindow {
+  timezone: string;
+  windowStart: string;
+  windowEnd: string;
+  truncated: boolean;
+  occurrences: PublicCalendarOccurrence[];
+}
+
+export interface CalendarFilters {
+  type?: EventType;
+  groupId?: string;
+  unitId?: string;
+  /** Staff only; members never see non-published events whatever they ask for. */
+  status?: EventStatus;
+}
+
+/** One line of an event's history, from GET /events/{id}/history. */
+export interface EventHistoryEntry {
+  id: string;
+  action: string;
+  actorName: string | null;
+  createdAt: string;
+  metadata: {
+    changed?: Record<string, { from: unknown; to: unknown }>;
+    comment?: string | null;
+    reviewers?: string[];
+    title?: string;
+    via?: string;
+    [key: string]: unknown;
+  } | null;
+}
+
+/**
+ * What every calendar component needs from an occurrence. Staff, member and
+ * public windows all satisfy it (the public one has no status/visibility/group),
+ * so one month grid and one agenda serve all three screens.
+ */
+export interface CalendarItem {
+  eventId: string;
+  title: string;
+  type: EventType;
+  location: string | null;
+  occurrenceStart: string;
+  occurrenceEnd: string | null;
+  isAllDay: boolean;
+  isRecurring: boolean;
+  accentColor: string | null;
+  /** Absent on the public calendar, where every item is published. */
+  status?: EventStatus;
+  visibility?: EventVisibility;
+  groupName?: string | null;
 }

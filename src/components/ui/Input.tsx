@@ -5,6 +5,7 @@
  * @prop label - Input label (required for accessibility, can be visually hidden)
  * @prop error - Error message string
  * @prop leftIcon - Icon rendered inside the input on the left
+ * @prop suffix - Control rendered inside the input on the right (e.g. a currency picker)
  *
  * Password fields get a show/hide button. Fields also get the keyboard and
  * autofill hints their `type` implies (email, phone, url, password), so a phone
@@ -19,7 +20,7 @@
  *   {...register('email')}
  * />
  */
-import { type ComponentPropsWithoutRef, type ElementType, forwardRef, useId, useState } from 'react';
+import { type ComponentPropsWithoutRef, type ElementType, forwardRef, type ReactNode, useId, useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/cn';
 
@@ -30,10 +31,11 @@ export interface InputProps extends ComponentPropsWithoutRef<'input'> {
   /** Any icon component accepting `size` — a LucideIcon or a small custom renderer. */
   leftIcon?: ElementType;
   hideLabel?: boolean;
+  suffix?: ReactNode;
 }
 
 export const Input = forwardRef<HTMLInputElement, InputProps>(
-  ({ label, error, leftIcon: LeftIcon, hideLabel, className, id: externalId, type, ...props }, ref) => {
+  ({ label, error, leftIcon: LeftIcon, hideLabel, suffix, className, id: externalId, type, ...props }, ref) => {
     const internalId = useId();
     const id = externalId ?? internalId;
     const errorId = `${id}-error`;
@@ -88,6 +90,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               'focus:ring-2 focus:ring-primary/20',
               LeftIcon ? 'pl-10' : '',
               isPassword && 'pr-11',
+              suffix ? 'pr-24' : '',
               error 
                 ? 'border-danger focus:border-danger' 
                 : 'border-slate-200 dark:border-slate-700 focus:border-primary',
@@ -95,6 +98,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             )}
             {...props}
           />
+
+          {suffix && <div className="absolute right-1 top-1/2 -translate-y-1/2">{suffix}</div>}
 
           {isPassword && (
             <button

@@ -14,10 +14,13 @@ import { eventsService } from '@/services/eventsService';
 import { useRole } from '@/hooks/useRole';
 import { Avatar, Badge, Button, Card, StatTile, Text } from '@/components/ui';
 import { formatDateShort, formatTime } from '@/lib/formatters';
+import { useChurchTimeZone } from '@/hooks/useChurchTimeZone';
+import { eventWhen, upcomingByDate } from '@/components/events/eventOccurrence';
 
 export function UnitDetail() {
   const { id = '' } = useParams();
   const { can } = useRole();
+  const zone = useChurchTimeZone();
 
   const { data: units = [], isLoading } = useQuery({
     queryKey: ['units'],
@@ -151,7 +154,7 @@ export function UnitDetail() {
           Coming up
         </Text>
         <Card padding="none" className="divide-y divide-slate-100 dark:divide-slate-800">
-          {events.slice(0, 3).map((event) => (
+          {upcomingByDate(events).slice(0, 3).map((event) => (
             <Link
               key={event.id}
               to={`/staff/events/${event.id}`}
@@ -163,7 +166,7 @@ export function UnitDetail() {
                   {event.title}
                 </Text>
                 <Text variant="caption" color="muted">
-                  {formatDateShort(event.startDateTime)} · {formatTime(event.startDateTime)}
+                  {formatDateShort(eventWhen(event), 'en-US', zone)} · {event.isAllDay ? 'All day' : formatTime(eventWhen(event), 'en-US', zone)}
                 </Text>
               </div>
             </Link>

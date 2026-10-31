@@ -18,6 +18,7 @@ import { MemberLayout } from './layouts/MemberLayout';
 import { StaffLayout } from './layouts/StaffLayout';
 import { BoardLayout } from './layouts/BoardLayout';
 import { PlatformLayout } from './layouts/PlatformLayout';
+import { FocusLayout } from './layouts/FocusLayout';
 
 import { LoginScreen } from './auth/LoginScreen';
 import { RegisterScreen } from './auth/RegisterScreen';
@@ -26,6 +27,7 @@ import { ResetPassword } from './auth/ResetPassword';
 import { MfaChallenge } from './auth/MfaChallenge';
 
 import { NotFound, Forbidden, OfflineScreen, ServerError, SubscriptionExpired } from './system/ErrorScreens';
+import { NotificationsEntry } from './notifications/NotificationScreens';
 
 /**
  * Adapts a named export to the `{ Component }` shape the router's `lazy` expects.
@@ -76,6 +78,9 @@ const publicRoutes = {
     { path: 'account-locked', lazy: screen(() => import('./auth/AuthStatusScreens'), 'AccountLocked') },
     { path: 'session-expired', lazy: screen(() => import('./auth/AuthStatusScreens'), 'SessionExpired') },
     { path: 'accept-invite', lazy: screen(() => import('./auth/AcceptInvite'), 'AcceptInvite') },
+    // Same sign-in look and flow as everyone's; lives here (not under the platform layout,
+    // which sends signed-out visitors to this very page).
+    { path: 'platform/login', lazy: screen(() => import('./platform/PlatformLogin'), 'PlatformLogin') },
   ],
 };
 
@@ -83,10 +88,10 @@ const publicRoutes = {
 // Deliberately not under publicRoutes/PublicLayout: registering (step 1) signs
 // the new leader in immediately, so PublicLayout's "redirect away if already
 // authenticated" guard would bounce them straight to the dashboard before the
-// wizard ever rendered. Both screens already provide their own full-page
-// chrome, so no layout wrapper is needed here at all.
+// wizard ever rendered. FocusLayout only adds the site header (home, theme).
 const onboardingRoutes = {
   path: '/',
+  element: <FocusLayout />,
   children: [
     { path: 'onboarding/complete', lazy: screen(() => import('./onboarding/WizardComplete'), 'WizardComplete') },
     { path: 'onboarding/plan', lazy: screen(() => import('./onboarding/PlanPicker'), 'PlanPicker') },
@@ -112,9 +117,10 @@ const memberRoutes = {
     { path: 'events/:id', lazy: screen(() => import('./portal/MemberEventDetail'), 'MemberEventDetail') },
     { path: 'groups', lazy: screen(() => import('./portal/MyGroups'), 'MyGroups') },
     { path: 'groups/:id', lazy: screen(() => import('./portal/MyGroupDetail'), 'MyGroupDetail') },
+    { path: 'notifications', lazy: screen(() => import('./notifications/NotificationScreens'), 'NotificationsScreen') },
     {
-      path: 'notifications',
-      lazy: screen(() => import('./portal/NotificationInbox'), 'NotificationInbox'),
+      path: 'notifications/preferences',
+      lazy: screen(() => import('./notifications/NotificationScreens'), 'NotificationSettingsScreen'),
     },
     {
       path: 'announcements',
@@ -130,6 +136,7 @@ const staffRoutes = {
   children: [
     { path: 'dashboard', lazy: screen(() => import('./staff/StaffDashboard'), 'StaffDashboard') },
     { path: 'account', lazy: screen(() => import('./account/MyAccount'), 'MyAccount') },
+    { path: 'notifications', lazy: screen(() => import('./notifications/NotificationScreens'), 'NotificationsScreen') },
 
     // Everything else on this surface comes from the module registry, so a
     // module is added by editing src/modules/registry.ts and nothing here.
@@ -144,6 +151,11 @@ const boardRoutes = {
   children: [
     { path: 'dashboard', lazy: screen(() => import('./board/NetworkDashboard'), 'NetworkDashboard') },
     { path: 'account', lazy: screen(() => import('./account/MyAccount'), 'MyAccount') },
+    { path: 'notifications', lazy: screen(() => import('./notifications/NotificationScreens'), 'NotificationsScreen') },
+    {
+      path: 'notifications/preferences',
+      lazy: screen(() => import('./notifications/NotificationScreens'), 'NotificationSettingsScreen'),
+    },
     { path: 'hierarchy', lazy: screen(() => import('./staff/hierarchy/HierarchyTreeView'), 'HierarchyTreeView') },
     { path: 'units/:id', lazy: screen(() => import('./staff/hierarchy/UnitDetail'), 'UnitDetail') },
     { path: 'organisations', lazy: screen(() => import('./platform/OrganisationsList'), 'OrganisationsList') },
@@ -159,7 +171,6 @@ const platformRoutes = {
   path: '/platform',
   element: <PlatformLayout />,
   children: [
-    { path: 'login', lazy: screen(() => import('./platform/PlatformLogin'), 'PlatformLogin') },
     { path: 'dashboard', lazy: screen(() => import('./platform/PlatformDashboard'), 'PlatformDashboard') },
     { path: 'account', lazy: screen(() => import('./account/MyAccount'), 'MyAccount') },
 
@@ -183,6 +194,13 @@ const platformRoutes = {
 };
 
 // --- Error Pages ---
+// Links that can't know who opens them (the footer of a notification email) land here and are
+// sent on to the signed-in person's own area.
+const notificationEntryRoutes = [
+  { path: '/notifications', element: <NotificationsEntry to="inbox" /> },
+  { path: '/notifications/preferences', element: <NotificationsEntry to="preferences" /> },
+];
+
 const errorRoutes = [
   { path: '/403', element: <Forbidden /> },
   { path: '/404', element: <NotFound /> },
@@ -196,6 +214,7 @@ export const router = createBrowserRouter([
   marketingRoutes,
   publicRoutes,
   onboardingRoutes,
+  ...notificationEntryRoutes,
   memberRoutes,
   staffRoutes,
   boardRoutes,

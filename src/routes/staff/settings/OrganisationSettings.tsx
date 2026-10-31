@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { useRole } from '@/hooks/useRole';
 import { MediaPicker } from '@/components/media/MediaPicker';
+import { ChurchTimeZoneSetting } from './ChurchTimeZoneSetting';
 import { Button, Card, Input, Select, Text } from '@/components/ui';
 import { cn } from '@/lib/cn';
 
@@ -57,7 +58,6 @@ export function OrganisationSettings() {
   const [logoUrl, setLogoUrl] = useState<string | undefined>(undefined);
   const [primaryColor, setPrimaryColor] = useState(BRAND_COLORS[0].value);
   const [language, setLanguage] = useState('en');
-  const [timezone, setTimezone] = useState('America/Chicago');
   const [dateFormat, setDateFormat] = useState('MDY');
   const [isSaved, setSaved] = useState(false);
 
@@ -191,18 +191,7 @@ export function OrganisationSettings() {
               { value: 'sw', label: 'Kiswahili' },
             ]}
           />
-          <Select
-            label="Timezone"
-            value={timezone}
-            onChange={(e) => setTimezone(e.target.value)}
-            options={[
-              { value: 'America/Chicago', label: 'Central Time (US)' },
-              { value: 'America/New_York', label: 'Eastern Time (US)' },
-              { value: 'Europe/London', label: 'London' },
-              { value: 'Africa/Lagos', label: 'Lagos' },
-              { value: 'Africa/Nairobi', label: 'Nairobi' },
-            ]}
-          />
+          <ChurchTimeZoneSetting editable={canEditOrg} />
           <Select
             label="Date format"
             value={dateFormat}

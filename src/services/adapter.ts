@@ -195,7 +195,7 @@ async function toApiError(res: Response): Promise<ApiError> {
  * Real API call — JSON in and out, camelCase on this side, snake_case on the
  * wire. Only used when API_MODE = 'rest'.
  */
-export async function apiRequest<T>(path: string, options: ApiRequestOptions = {}): Promise<T> {
+async function authorizedResponse(path: string, options: ApiRequestOptions): Promise<Response> {
   if (!options.skipAuth && handlers) {
     // No token yet (fresh tab) or about to expire: refresh first rather than
     // spend a request on a guaranteed 401.
@@ -219,9 +219,54 @@ export async function apiRequest<T>(path: string, options: ApiRequestOptions = {
   }
 
   if (!res.ok) throw await toApiError(res);
+  return res;
+}
+
+async function parseBody<T>(res: Response): Promise<T> {
   if (res.status === 204) return undefined as T;
   const text = await res.text();
   return (text ? toCamelCase<T>(JSON.parse(text)) : undefined) as T;
+}
+
+export async function apiRequest<T>(path: string, options: ApiRequestOptions = {}): Promise<T> {
+  return parseBody<T>(await authorizedResponse(path, options));
+}
+
+/**
+ * One page of a list and the total across all pages (X-Total-Count), for screens that load
+ * "more" as you go instead of everything at once.
+ */
+export async function apiRequestPage<T>(
+  path: string,
+  options: ApiRequestOptions = {},
+): Promise<{ items: T[]; total: number }> {
+  const res = await authorizedResponse(path, options);
+  const items = (await parseBody<T[]>(res)) ?? [];
+  const total = Number(res.headers.get('X-Total-Count'));
+  return { items, total: Number.isFinite(total) && total >= items.length ? total : items.length };
+}
+
+/** The API's largest page; list endpoints answer at most this many rows per request. */
+export const MAX_PAGE_SIZE = 500;
+/** A backstop against a runaway loop (10 000 rows is far beyond any church's list). */
+const MAX_PAGES = 20;
+
+/**
+ * A list endpoint's every row. The API pages lists (default 100, max 500) and
+ * says so in X-Total-Count; a screen that read only the first page would show a
+ * silently truncated list. This walks the pages until it has them all.
+ */
+export async function apiRequestAll<T>(path: string, options: ApiRequestOptions = {}): Promise<T[]> {
+  const rows: T[] = [];
+  const joiner = path.includes('?') ? '&' : '?';
+  for (let page = 0; page < MAX_PAGES; page += 1) {
+    const res = await authorizedResponse(`${path}${joiner}limit=${MAX_PAGE_SIZE}&offset=${page * MAX_PAGE_SIZE}`, options);
+    const batch = (await parseBody<T[]>(res)) ?? [];
+    rows.push(...batch);
+    const total = Number(res.headers.get('X-Total-Count'));
+    if (batch.length < MAX_PAGE_SIZE || (Number.isFinite(total) && total > 0 && rows.length >= total)) break;
+  }
+  return rows;
 }
 
 /**

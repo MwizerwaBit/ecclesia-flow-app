@@ -8,10 +8,12 @@
  * floating button and into the bar where desktop users look for it.
  */
 import { type ReactNode } from 'react';
-import { Bell, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { Input, Text } from '@/components/ui';
+import { ThemeToggle } from './ThemeToggle';
 import { UserMenu } from './UserMenu';
+import { NotificationBell } from '@/components/notifications';
 
 interface TopBarProps {
   /** Usually omitted: screens carry their own heading via PageHeader, and two
@@ -31,7 +33,6 @@ interface TopBarProps {
   profileHref?: string;
   /** Where signing out lands. */
   loginPath?: string;
-  notificationCount?: number;
   variant?: 'default' | 'platform';
   className?: string;
 }
@@ -44,7 +45,6 @@ export function TopBar({
   user,
   profileHref,
   loginPath,
-  notificationCount,
   variant = 'default',
   className,
 }: TopBarProps) {
@@ -91,23 +91,9 @@ export function TopBar({
       {actions && <div className="flex items-center gap-2 shrink-0">{actions}</div>}
 
       <div className="flex items-center gap-3 shrink-0 border-l border-slate-200 dark:border-slate-800 pl-4">
-        <button
-          type="button"
-          aria-label={
-            notificationCount ? `${notificationCount} unread notifications` : 'Notifications'
-          }
-          className={cn(
-            'relative grid size-11 place-items-center rounded-lg transition-colors',
-            isPlatform
-              ? 'text-slate-300 hover:bg-slate-800'
-              : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800',
-          )}
-        >
-          <Bell size={19} />
-          {!!notificationCount && (
-            <span className="absolute right-2 top-2 size-2 rounded-full bg-danger" />
-          )}
-        </button>
+        {/* A platform admin belongs to no church, so has no notifications. */}
+        {!isPlatform && <NotificationBell variant="dropdown" />}
+        <ThemeToggle />
 
         {user && profileHref && (
           <UserMenu
