@@ -20,7 +20,8 @@ import {
   CalendarCheck,
   CalendarDays,
   ClipboardCheck,
-  ClipboardList,
+  FileBarChart,
+  FileSpreadsheet,
   FolderOpen,
   HeartHandshake,
   Megaphone,
@@ -211,6 +212,18 @@ export const MODULES: AppModule[] = [
   },
 
   {
+    id: 'reports',
+    name: 'Reports',
+    description: 'Membership counts and trends, with spreadsheet downloads.',
+    icon: FileBarChart,
+    minTier: 'seed',
+    nav: [{ label: 'Reports', path: 'reports', icon: FileBarChart, section: 'Operations', permission: 'analytics:read' }],
+    routes: [
+      { path: 'reports', index: true, permission: 'analytics:read', component: 'ReportsHome', load: () => import('@/routes/staff/reports/ReportsHome') },
+    ],
+  },
+
+  {
     id: 'administration',
     name: 'Administration',
     description: 'Team, roles, organisation settings, billing and data controls.',
@@ -220,6 +233,7 @@ export const MODULES: AppModule[] = [
     nav: [
       { label: 'Team & roles', path: 'team', icon: Users, section: 'Administration', permission: 'team:read' },
       { label: 'Leadership', path: 'team/structure', icon: Network, section: 'Administration', permission: 'team:read' },
+      { label: 'Import & export', path: 'data', icon: FileSpreadsheet, section: 'Administration', permission: 'members:create' },
       { label: 'Settings', path: 'settings', icon: Settings, section: 'Administration' },
     ],
     routes: [
@@ -227,6 +241,7 @@ export const MODULES: AppModule[] = [
       { path: 'team/invite', permission: 'team:invite', component: 'InviteStaff', load: () => import('@/routes/staff/team/InviteStaff') },
       { path: 'team/roles/new', permission: 'roles:create', component: 'CustomRoleBuilder', load: () => import('@/routes/staff/team/CustomRoleBuilder') },
       { path: 'team/structure', permission: 'team:read', component: 'LeadershipStructure', load: () => import('@/routes/staff/team/LeadershipStructure') },
+      { path: 'data', permission: 'members:create', component: 'DataExchange', load: () => import('@/routes/staff/data/DataExchange') },
       { path: 'settings', component: 'OrganisationSettings', load: () => import('@/routes/staff/settings/OrganisationSettings') },
       { path: 'settings/security', component: 'SecuritySettings', load: () => import('@/routes/staff/settings/SecuritySettings') },
       { path: 'settings/notifications', component: 'NotificationPreferences', load: () => import('@/routes/staff/settings/NotificationPreferences') },

@@ -23,7 +23,8 @@ function escapeCell(value: CsvValue): string {
   return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }
 
-function triggerDownload(blob: Blob, filename: string): void {
+/** Hands a Blob the app already holds (e.g. a file the API returned) to the user. */
+export function saveBlob(blob: Blob, filename: string): void {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
@@ -55,7 +56,7 @@ export function downloadCsv<T>(
   const csv = `﻿${[header, ...body].join('\r\n')}`;
   const stamp = new Date().toISOString().slice(0, 10);
 
-  triggerDownload(new Blob([csv], { type: 'text/csv;charset=utf-8' }), `${filename}-${stamp}.csv`);
+  saveBlob(new Blob([csv], { type: 'text/csv;charset=utf-8' }), `${filename}-${stamp}.csv`);
 }
 
 /** Save a file the server produced (a CSV export), under the name given. */
@@ -66,7 +67,7 @@ export function saveBlob(blob: Blob, filename: string): void {
 /** Download an object as formatted JSON — used for whole-organisation exports. */
 export function downloadJson(filename: string, data: unknown): void {
   const stamp = new Date().toISOString().slice(0, 10);
-  triggerDownload(
+  saveBlob(
     new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }),
     `${filename}-${stamp}.json`,
   );

@@ -18,6 +18,7 @@ import { MemberLayout } from './layouts/MemberLayout';
 import { StaffLayout } from './layouts/StaffLayout';
 import { BoardLayout } from './layouts/BoardLayout';
 import { PlatformLayout } from './layouts/PlatformLayout';
+import { FocusLayout } from './layouts/FocusLayout';
 
 import { LoginScreen } from './auth/LoginScreen';
 import { RegisterScreen } from './auth/RegisterScreen';
@@ -72,12 +73,15 @@ const publicRoutes = {
     { path: 'forgot-password', element: <ForgotPassword /> },
     { path: 'reset-password', element: <ResetPassword /> },
     { path: 'mfa/challenge', element: <MfaChallenge /> },
-    { path: 'mfa/setup', lazy: screen(() => import('./auth/AuthStatusScreens'), 'MfaSetup') },
+    { path: 'mfa/setup', lazy: screen(() => import('./auth/MfaSetup'), 'MfaSetup') },
     { path: 'magic-link-sent', lazy: screen(() => import('./auth/AuthStatusScreens'), 'MagicLinkSent') },
     { path: 'verify-email', lazy: screen(() => import('./auth/AuthStatusScreens'), 'VerificationWaiting') },
     { path: 'account-locked', lazy: screen(() => import('./auth/AuthStatusScreens'), 'AccountLocked') },
     { path: 'session-expired', lazy: screen(() => import('./auth/AuthStatusScreens'), 'SessionExpired') },
     { path: 'accept-invite', lazy: screen(() => import('./auth/AcceptInvite'), 'AcceptInvite') },
+    // Same sign-in look and flow as everyone's; lives here (not under the platform layout,
+    // which sends signed-out visitors to this very page).
+    { path: 'platform/login', lazy: screen(() => import('./platform/PlatformLogin'), 'PlatformLogin') },
   ],
 };
 
@@ -85,10 +89,10 @@ const publicRoutes = {
 // Deliberately not under publicRoutes/PublicLayout: registering (step 1) signs
 // the new leader in immediately, so PublicLayout's "redirect away if already
 // authenticated" guard would bounce them straight to the dashboard before the
-// wizard ever rendered. Both screens already provide their own full-page
-// chrome, so no layout wrapper is needed here at all.
+// wizard ever rendered. FocusLayout only adds the site header (home, theme).
 const onboardingRoutes = {
   path: '/',
+  element: <FocusLayout />,
   children: [
     { path: 'onboarding/complete', lazy: screen(() => import('./onboarding/WizardComplete'), 'WizardComplete') },
     { path: 'onboarding/plan', lazy: screen(() => import('./onboarding/PlanPicker'), 'PlanPicker') },
@@ -168,7 +172,6 @@ const platformRoutes = {
   path: '/platform',
   element: <PlatformLayout />,
   children: [
-    { path: 'login', lazy: screen(() => import('./platform/PlatformLogin'), 'PlatformLogin') },
     { path: 'dashboard', lazy: screen(() => import('./platform/PlatformDashboard'), 'PlatformDashboard') },
     { path: 'account', lazy: screen(() => import('./account/MyAccount'), 'MyAccount') },
 
