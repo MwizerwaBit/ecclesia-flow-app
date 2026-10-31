@@ -58,6 +58,7 @@ const marketingRoutes = {
     { path: 'c/:slug', lazy: screen(() => import('./public/ChurchLandingPage'), 'ChurchLandingPage') },
     { path: 'c/:slug/calendar', lazy: screen(() => import('./public/PublicEventCalendar'), 'PublicEventCalendar') },
     { path: 'c/:slug/events/:eventId', lazy: screen(() => import('./public/PublicEventRegister'), 'PublicEventRegister') },
+    { path: 'c/:slug/forms/:key', lazy: screen(() => import('./public/PublicForm'), 'PublicForm') },
     { path: 'c/:slug/join', lazy: screen(() => import('./public/JoinChurch'), 'JoinChurch') },
   ],
 };

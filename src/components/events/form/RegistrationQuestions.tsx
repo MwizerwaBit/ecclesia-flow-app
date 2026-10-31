@@ -9,27 +9,16 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { ClipboardList, Copy, Plus, Trash2 } from 'lucide-react';
-import type { RegistrationField, RegistrationFieldDraft, RegistrationFieldType } from '@/types';
+import { ClipboardList, Copy } from 'lucide-react';
+import type { RegistrationFieldDraft } from '@/types';
 import { eventsService } from '@/services/eventsService';
 import { orgService } from '@/services/orgService';
 import { shareOrCopy } from '@/lib/download';
 import { toast } from '@/hooks/useToastStore';
-import { Button, Card, Checkbox, Input, Select, Skeleton, Text } from '@/components/ui';
+import { Button, Card, Input, Skeleton, Text } from '@/components/ui';
+import { QuestionEditor } from '@/components/forms/QuestionEditor';
+import { problemWithFields, toDrafts } from '@/lib/forms';
 import { ErrorNotice } from '@/components/feedback/ErrorNotice';
-
-const FIELD_TYPES: Array<{ value: RegistrationFieldType; label: string }> = [
-  { value: 'text', label: 'Short answer' },
-  { value: 'single_choice', label: 'Choose one' },
-  { value: 'checkbox', label: 'Choose any' },
-];
-
-function blankField(): RegistrationFieldDraft {
-  return { label: '', fieldType: 'text', options: [], required: false };
-}
-
-const toDrafts = (saved: RegistrationField[]): RegistrationFieldDraft[] =>
-  saved.map(({ label, fieldType, options, required }) => ({ label, fieldType, options, required }));
 
 interface RegistrationQuestionsProps {
   eventId: string;
@@ -66,23 +55,6 @@ export function RegistrationQuestions({ eventId, title }: RegistrationQuestionsP
     },
   });
 
-  function edit(change: (prev: RegistrationFieldDraft[]) => RegistrationFieldDraft[]) {
-    setEdits(change(fields));
-  }
-
-  const updateField = (index: number, patch: Partial<RegistrationFieldDraft>) =>
-    edit((prev) => prev.map((f, i) => (i === index ? { ...f, ...patch } : f)));
-
-  function moveField(index: number, dir: -1 | 1) {
-    const target = index + dir;
-    if (target < 0 || target >= fields.length) return;
-    edit((prev) => {
-      const next = [...prev];
-      [next[index], next[target]] = [next[target], next[index]];
-      return next;
-    });
-  }
-
   // shareOrCopy says what happened; a silent clipboard write left people guessing.
   async function copyLink() {
     const result = await shareOrCopy({ title: title || 'Gathering', url: shareUrl });
@@ -90,9 +62,7 @@ export function RegistrationQuestions({ eventId, title }: RegistrationQuestionsP
     else if (result === 'failed') toast.error('Couldn’t copy the link. Select it and copy it by hand.');
   }
 
-  const removeField = (index: number) => edit((prev) => prev.filter((_, i) => i !== index));
-
-  const incomplete = fields.some((f) => !f.label.trim() || (f.fieldType !== 'text' && f.options.length === 0));
+  const incomplete = problemWithFields(fields) !== null;
 
   return (
     <Card variant="outline" padding="md" className="space-y-4">
@@ -146,106 +116,11 @@ export function RegistrationQuestions({ eventId, title }: RegistrationQuestionsP
 
       {saved.isSuccess && (
         <>
-          {fields.length === 0 && (
-            <Text variant="body-sm" color="muted">
-              No questions yet. People will only tell you they’re coming.
-            </Text>
-          )}
-
-          <div className="space-y-3">
-            {fields.map((field, index) => (
-              <div
-                key={index}
-                role="group"
-                aria-label={`Question ${index + 1}`}
-                className="rounded-lg border border-slate-200 dark:border-slate-700 p-3 space-y-2"
-              >
-                <div className="flex flex-col gap-2 lg:flex-row lg:items-start">
-                  <Input
-                    label="Question"
-                    value={field.label}
-                    onChange={(e) => updateField(index, { label: e.target.value })}
-                    className="flex-1"
-                  />
-                  <Select
-                    label="Type"
-                    value={field.fieldType}
-                    onChange={(e) =>
-                      updateField(index, {
-                        fieldType: e.target.value as RegistrationFieldType,
-                        options: e.target.value === 'text' ? [] : field.options,
-                      })
-                    }
-                    options={FIELD_TYPES}
-                  />
-                </div>
-
-                {field.fieldType !== 'text' && (
-                  <Input
-                    label="Options (comma-separated)"
-                    value={field.options.join(', ')}
-                    onChange={(e) =>
-                      updateField(index, {
-                        options: e.target.value
-                          .split(',')
-                          .map((o) => o.trim())
-                          .filter(Boolean),
-                      })
-                    }
-                  />
-                )}
-
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <Checkbox
-                    label="Required"
-                    checked={field.required}
-                    onChange={(e) => updateField(index, { required: e.target.checked })}
-                  />
-                  <div className="flex items-center gap-1">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      aria-label={`Move question ${index + 1} up`}
-                      onClick={() => moveField(index, -1)}
-                      disabled={index === 0}
-                    >
-                      ↑
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      aria-label={`Move question ${index + 1} down`}
-                      onClick={() => moveField(index, 1)}
-                      disabled={index === fields.length - 1}
-                    >
-                      ↓
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      leftIcon={Trash2}
-                      aria-label={`Remove question ${index + 1}`}
-                      onClick={() => removeField(index)}
-                    >
-                      Remove
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {save.isError && <ErrorNotice error={save.error} />}
-
-          <div className="flex items-center justify-between gap-2">
-            <Button
-              type="button"
-              variant="secondary"
-              leftIcon={Plus}
-              onClick={() => edit((prev) => [...prev, blankField()])}
-            >
-              Add question
-            </Button>
+          <QuestionEditor
+            fields={fields}
+            onChange={(next: RegistrationFieldDraft[]) => setEdits(next)}
+            emptyText="No questions yet. People will only tell you they’re coming."
+          >
             <Button
               type="button"
               variant="primary"
@@ -255,7 +130,9 @@ export function RegistrationQuestions({ eventId, title }: RegistrationQuestionsP
             >
               Save questions
             </Button>
-          </div>
+          </QuestionEditor>
+
+          {save.isError && <ErrorNotice error={save.error} />}
         </>
       )}
     </Card>
