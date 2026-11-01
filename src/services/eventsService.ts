@@ -29,7 +29,7 @@ import type {
   RegistrationFieldDraft,
   ReviewerOption,
 } from '@/types';
-import { mockResponse, API_MODE, apiRequest, apiRequestAll, requireApi } from './adapter';
+import { mockResponse, API_MODE, apiBlob, apiRequest, apiRequestAll, requireApi } from './adapter';
 import { MOCK_EVENTS, MOCK_EVENT_DETAIL, MOCK_ATTENDANCE_SUMMARY } from '@/mocks/events.mock';
 
 export interface AttendanceMarkInput {
@@ -347,6 +347,27 @@ export const eventsService = {
   async listResponses(eventId: string): Promise<EventRegistration[]> {
     requireApi('Registration forms');
     return apiRequest<EventRegistration[]>(`/events/${eventId}/responses?limit=500`);
+  },
+
+  /** The responses as a CSV file the server builds (every row, spreadsheet-safe). */
+  async exportResponses(eventId: string): Promise<Blob> {
+    requireApi('Registration forms');
+    return apiBlob(`/events/${eventId}/responses/export`);
+  },
+
+  /** Whether the public link is taking sign-ups. */
+  async getRegistrationStatus(eventId: string): Promise<'published' | 'closed'> {
+    requireApi('Registration forms');
+    return (await apiRequest<{ status: 'published' | 'closed' }>(`/events/${eventId}/registration`)).status;
+  },
+
+  async setRegistrationStatus(eventId: string, status: 'published' | 'closed'): Promise<'published' | 'closed'> {
+    requireApi('Registration forms');
+    const result = await apiRequest<{ status: 'published' | 'closed' }>(`/events/${eventId}/registration`, {
+      method: 'PUT',
+      body: JSON.stringify({ status }),
+    });
+    return result.status;
   },
 
   // ── Schedule collisions (API only) ──────────────────────────────────────

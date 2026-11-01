@@ -2,6 +2,7 @@
  * @file event.types.ts
  * @description Domain types for the Events and Attendance modules.
  */
+import type { FormAnswers, FormField, FormFieldDraft, FormFieldType, FormSubmission, FormSubmissionInput } from './forms.types';
 
 export type EventStatus =
   | 'draft'
@@ -72,49 +73,20 @@ export interface PublicEvent {
   theme: EventTheme;
 }
 
-/** A custom registration question attached to an event. */
-export type RegistrationFieldType = 'text' | 'single_choice' | 'checkbox';
-
-export interface RegistrationField {
-  id: string;
-  label: string;
-  fieldType: RegistrationFieldType;
-  options: string[];
-  required: boolean;
-  position: number;
-}
-
-/** What's sent to replace a form — no id/position, the server assigns those
- * from array order. */
-export interface RegistrationFieldDraft {
-  label: string;
-  fieldType: RegistrationFieldType;
-  options: string[];
-  required: boolean;
-}
+/** An event's registration form is a form: same questions, same answers (see forms.types). */
+export type RegistrationFieldType = FormFieldType;
+export type RegistrationField = FormField;
+export type RegistrationFieldDraft = FormFieldDraft;
 
 export interface PublicEventDetail extends PublicEvent {
   registrationFields: RegistrationField[];
+  /** False once the organiser has closed sign-ups. */
+  registrationOpen: boolean;
 }
 
-/** Answers are keyed by the field's label, not its id — see RegistrationField. */
-export type RegistrationAnswers = Record<string, string | string[]>;
-
-export interface EventRegistrationInput {
-  respondentName: string;
-  respondentEmail?: string;
-  respondentPhone?: string;
-  answers: RegistrationAnswers;
-}
-
-export interface EventRegistration {
-  id: string;
-  respondentName: string;
-  respondentEmail: string | null;
-  respondentPhone: string | null;
-  answers: RegistrationAnswers;
-  createdAt: string;
-}
+export type RegistrationAnswers = FormAnswers;
+export type EventRegistrationInput = FormSubmissionInput;
+export type EventRegistration = FormSubmission;
 
 export type AttendanceMode = 'individual' | 'headcount';
 export type EventType = 'service' | 'meeting' | 'event' | 'prayer' | 'outreach' | 'other';
